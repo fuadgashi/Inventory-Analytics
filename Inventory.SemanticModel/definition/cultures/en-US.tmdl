@@ -1,0 +1,261 @@
+cultureInfo en-US
+	translations
+		model Model
+			table DimDate
+				column Date
+					caption: Date
+				column Day
+					caption: Day
+				column 'Day Initial'
+					caption: Day Initial
+				column 'Day Week'
+					caption: Weekday No
+				column 'Day Year'
+					caption: Day of Year
+				column DayMonth
+					caption: Date
+				column Month
+					caption: Month
+				column 'Month Name'
+					caption: Month
+				column 'Month Working Day'
+					caption: Day
+				column 'Month Year'
+					caption: Month/Year
+				column Quarter
+					caption: Quarter
+				column Week
+					caption: Week
+				column 'Week Month'
+					caption: Week of Month
+				column 'Week Name'
+					caption: Week (Text)
+				column 'Working Days'
+					caption: Working Days
+				column Year
+					caption: Year
+			table DimDivision
+				column DistributionCostRate
+					caption: Distribution Cost
+				column DivisionId
+					caption: Code
+				column DivisionName
+					caption: Division
+			table DimDocumentType
+				column DocumentTypeId
+					caption: Code
+				column DocumentTypeName
+					caption: Document Type
+				column IsPurchase
+					caption: Sales In
+				column IsSalesOut
+					caption: Sales Out
+			table DimOrgUnit
+				column OrgUnitId
+					caption: Code
+				column OrgUnitName
+					caption: Unit
+			table DimProduct
+				column Brand
+					caption: Supplier
+				column CasesPerPallet
+					caption: Pallet
+				column CountsTowardSales
+					caption: Counts
+				column DivisionId
+					caption: Division Code
+				column GrossWeightKg
+					caption: Gross Weight
+				column IsGoods
+					caption: Real Goods
+				column NetWeightKg
+					caption: Net Weight
+				column ProductId
+					caption: Code
+				column ProductName
+					caption: Product
+				column UnitsPerCase
+					caption: Box
+				column UnitsPerTradeCase
+					caption: Pieces per Carton
+			table ExpiryInterval
+				column Interval
+					caption: Interval
+			table ExpiryRiskBand
+				column Band
+					caption: Risk
+				column SortOrder
+					caption: Sort Order
+				measure 'Visual Filter'
+					caption: Filter
+			table FactInvoiceLine
+				column Date
+					caption: Date
+			table FactStock
+				column DaysToExpiry
+					caption: Days to Expiry
+				column ExpiryDate
+					caption: Expiry Date
+				column LocationId
+					caption: Location
+				column LotNumber
+					caption: Lot Number
+				column ProductId
+					caption: Product Code
+				column QuantityOnHand
+					caption: Quantity
+				column SaleReadiness
+					caption: Stock Readiness
+				column StockStatus
+					caption: Status
+				column StockStatusId
+					caption: Status Code
+				column WarehouseId
+					caption: Warehouse Code
+			table Measure
+				measure 'Cost Exceptions Count'
+					caption: Cost Exceptions
+				measure 'Cost Price'
+					caption: Cost Price
+				measure 'Cost Price Twelve Months'
+					caption: 12 Months
+				measure 'Cover to Shelf Life Ratio'
+					caption: Coverage
+				measure 'Expiry Date'
+					caption: Expiry Date
+				measure 'Expiry Risk Band'
+					caption: Risk Status
+				measure 'Expiry Risk Status'
+					caption: Risk
+				measure 'Index Sales Net Price Actual/Prior YTD'
+					caption: Index
+				measure 'Index Sales Quantity Actual/Prior YTD'
+					caption: Ind Prior Year
+				measure 'Net Price ex VAT'
+					caption: Net Price ex VAT
+				measure 'Net Price ex VAT Twelve Months'
+					caption: 12 Months
+				measure 'Order Requirement'
+					caption: Order Requirement
+				measure 'Product Days Since Last Sale'
+					caption: Days Since Last Sale
+				measure 'Regular Price'
+					caption: Selling Price
+				measure 'Regular Price Twelve Months'
+					caption: 12 Months
+				measure 'Sales Net Price'
+					caption: Sales
+				measure 'Sales Net Price Actual Year'
+					caption: Sales Current Year
+				measure 'Sales Net Price Monthly Average'
+					caption: Avg Month
+				measure 'Sales Net Price Prior Year'
+					caption: Prior Year
+				measure 'Sales Net Price Prior Year YTD'
+					caption: Prior Year TD
+				measure 'Sales Net Price Twelve Months'
+					caption: 12 Months
+				measure 'Sales Net Price Twelve Months Share'
+					caption: Sales Share
+				measure 'Sales Net Price Weekly Average'
+					caption: Avg Week
+				measure 'Sales Quantity'
+					caption: Quantity
+				measure 'Sales Quantity Actual Year'
+					caption: Current Year
+				measure 'Sales Quantity Actual Year Daily Average'
+					caption: Avg Day
+				measure 'Sales Quantity Actual Year YTG'
+					caption: Projected Sales
+				measure 'Sales Quantity Daily Average'
+					caption: Avg Day
+				measure 'Sales Quantity Daily Average Expiry Scope'
+					caption: Avg Day
+				measure 'Sales Quantity Prior Year'
+					caption: Prior Year
+				measure 'Sales Quantity Prior Year YTD'
+					caption: Prior Year TD
+				measure 'Sales Quantity Prior Year YTG'
+					caption: Prior Year YTG
+				measure 'Sales Quantity Twelve Months'
+					caption: 12 Months
+				measure 'Sales Selling Price'
+					caption: Sales at Selling Price
+				measure 'Sales Selling Price Twelve Months'
+					caption: 12 Months
+				measure 'Shelf Life Days'
+					caption: Shelf Life
+				measure 'Stock At Risk %'
+					caption: Stock at Risk %
+				measure 'Stock Carrying Amount'
+					caption: Stock Carrying Value
+				measure 'Stock Cost'
+					caption: Stock Cost
+				measure 'Stock Cost Exception Value'
+					caption: Cost Exception Value
+				measure 'Stock Cost Value'
+					caption: Stock Cost
+				measure 'Stock Days Since Last Sale'
+					caption: Days Since Last Sale
+				measure 'Stock Days To Next Expiry'
+					caption: Days to Next Expiry
+				measure 'Stock Days of Cover'
+					caption: Cover (quantity)
+				measure 'Stock Days of Cover Quantity'
+					caption: Durability Day
+				measure 'Stock Expired'
+					caption: Expired Value
+				measure 'Stock Expired Value'
+					caption: Expired Value
+				measure 'Stock Expiring 30 Days'
+					caption: Expiring within 30 Days
+				measure 'Stock Expiring 90 Days'
+					caption: Expiring within 90 Days
+				measure 'Stock List Value'
+					caption: Stock Value
+				measure 'Stock Packs'
+					caption: Stock Cartons
+				measure 'Stock Pallets'
+					caption: Stock Pallet
+				measure 'Stock Pallets Count'
+					caption: Stock Pallet
+				measure 'Stock Products Count'
+					caption: Products in Stock
+				measure 'Stock Quantity'
+					caption: Stock Qty
+				measure 'Stock Quantity Expiry Scope'
+					caption: Stock Qty
+				measure 'Stock Regular Price Value'
+					caption: Stock at Selling Price
+				measure 'Stock Share'
+					caption: Share Stock
+				measure 'Stock Units'
+					caption: Stock Qty
+				measure 'Stock Value'
+					caption: Stock Value
+				measure 'Stock Value Share'
+					caption: Share Stock
+				measure 'Stock Value by Expiry Interval'
+					caption: Interval Value
+				measure 'Stock Weeks of Cover'
+					caption: Cover (value)
+				measure 'Stock Weeks of Cover Quantity'
+					caption: Durability Week
+				measure 'Stock Weeks of Cover Value'
+					caption: Durability Week
+				measure 'Stock Without Sales'
+					caption: Stock Unsold 12 Months
+				measure 'Stock Without Sales Twelve Months'
+					caption: Stock Unsold 12 Months
+				measure 'Stock Write-Down'
+					caption: Stock Write-down
+				measure 'Unit Cost Derived'
+					caption: Derived Unit Cost
+				measure 'Unit Cost ERP'
+					caption: ERP Unit Cost
+				measure 'Unit Cost Ratio ERP/Derived'
+					caption: ERP/Derived Cost
+				measure 'Working Days Passed'
+					caption: Past Days
+				measure 'Working Days Remaining'
+					caption: Days Left

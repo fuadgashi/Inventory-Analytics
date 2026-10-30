@@ -1,0 +1,71 @@
+/// The six expiry-risk bands, worst to best: the Band slicer on Expiry. Disconnected; Visual Filter matches products to the selection.
+table ExpiryRiskBand
+	lineageTag: ece8f89d-9ca9-4aa8-b899-c6844a110305
+
+	/// Returns 1 when the matrix row belongs to what the Band slicer shows: with Expired, articles holding any expired lot; with another band, articles whose band (Expiry Risk Band, from the fresh stock) is selected. Else 0. Used as a visual-level filter, not for display - and the only place the band is computed per row, so the page costs about what it did with one band per article.
+	measure 'Visual Filter' =
+			VAR _selection = VALUES( ExpiryRiskBand[Band] )
+			VAR _show_expired = "Expired" IN _selection
+			VAR _show_fresh = COUNTROWS( EXCEPT( _selection, { "Expired" } ) ) > 0
+			RETURN
+			    IF(
+			        ( _show_expired && NOT ISBLANK( CALCULATE(
+			        SUM( FactStock[QuantityOnHand] ),
+			        KEEPFILTERS( FactStock[InExpiryScope] = TRUE ),
+			        KEEPFILTERS( FactStock[DaysToExpiry] < 0 )
+			    ) ) )
+			            || ( _show_fresh && [Expiry Risk Band] IN _selection ),
+			        1,
+			        0
+			    )
+		formatString: 0
+		displayFolder: Stock\Expiry
+		lineageTag: c0f1c08a-2bd7-432a-a8d4-c595a0608a5c
+
+	/// Expiry-risk band shown to the user. Worst-to-best: Expired (holds expired quantity), At Risk (may not sell before it expires), Watch, Healthy, then the two bands where the ratio cannot be computed - No Sales (dead stock) and No Expiry Date (missing source data).
+	column Band
+		dataType: string
+		lineageTag: 72cc27a5-7a82-428e-a226-db75bd24416c
+		summarizeBy: none
+		sourceColumn: Band
+		sortByColumn: SortOrder
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Sort order for the risk band, so it reads worst-to-best rather than alphabetically.
+	column SortOrder
+		dataType: int64
+		formatString: 0
+		lineageTag: a26ee582-511a-49c8-8ccd-39c1acfb708c
+		summarizeBy: none
+		sourceColumn: SortOrder
+
+		annotation SummarizationSetBy = Automatic
+
+	partition ExpiryRiskBand = m
+		mode: import
+		queryGroup: Model
+		source =
+				let
+				    // The six expiry-risk bands, worst to best. Expired comes first; No Sales and No Expiry Date
+				    // are the two bands where the cover-to-shelf-life ratio cannot be computed.
+				    Source = Table.FromRows(
+				        {
+				            {"Expired", 1},
+				            {"At Risk", 2},
+				            {"Watch", 3},
+				            {"Healthy", 4},
+				            {"No Sales", 5},
+				            {"No Expiry Date", 6}
+				        },
+				        type table [Band = Text.Type, SortOrder = Int64.Type]
+				    )
+				in
+				    Source
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

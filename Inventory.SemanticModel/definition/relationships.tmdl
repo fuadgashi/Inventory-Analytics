@@ -1,0 +1,27 @@
+relationship AutoDetected_1a3e856a-dd59-4cbd-b423-365b0192cf1a
+	fromColumn: FactStock.ProductId
+	toColumn: DimProduct.ProductId
+
+relationship AutoDetected_a1565537-f3ed-4ef1-be02-7844bebde9d2
+	fromColumn: FactStock.WarehouseId
+	toColumn: DimOrgUnit.OrgUnitId
+
+relationship 32a349e1-0a46-4b9d-a488-cd2d6eb28586
+	fromColumn: DimProduct.DivisionId
+	toColumn: DimDivision.DivisionId
+
+relationship AutoDetected_ae284e56-8d8d-4cf3-b462-ad2b78cb2a3c
+	fromColumn: FactInvoiceLine.DocumentTypeId
+	toColumn: DimDocumentType.DocumentTypeId
+
+relationship AutoDetected_e2b5f731-2f4e-48bf-9d0b-01ebf102bb00
+	fromColumn: FactInvoiceLine.ProductId
+	toColumn: DimProduct.ProductId
+
+relationship 2406c9e8-13a0-4808-aa16-57d3401f9635
+	fromColumn: FactInvoiceLine.Date
+	toColumn: DimDate.Date
+
+relationship 7f1f76b3-8dea-4a0d-a12e-35127badc589
+	fromColumn: FactInvoiceLine.OrgUnitId
+	toColumn: DimOrgUnit.OrgUnitId

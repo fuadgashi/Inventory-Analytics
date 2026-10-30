@@ -1,0 +1,65 @@
+/// Expiry horizon intervals in days remaining. Disconnected: measures read the selection with SELECTEDVALUE/MIN/MAX and filter FactStock[DaysToExpiry] on it. Negative days mean already expired.
+table ExpiryInterval
+	lineageTag: 61846326-0729-4cbf-aee4-8d78e983f949
+
+	/// Expiry horizon interval shown to the user. Sorted worst-to-best by SortOrder, not alphabetically.
+	column Interval
+		dataType: string
+		lineageTag: bd703321-b3c2-4146-99ac-9c59def724c2
+		summarizeBy: none
+		sourceColumn: Interval
+		sortByColumn: SortOrder
+
+	/// Sort order for the expiry interval, so Expired reads first.
+	column SortOrder
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 02a820f0-4074-4192-b702-a173d10c2b93
+		summarizeBy: none
+		sourceColumn: SortOrder
+
+	/// Lower bound of the interval, in days remaining to expiry. Inclusive. Negative means already expired.
+	column DaysFrom
+		dataType: int64
+		isHidden
+		formatString: 0
+		isAvailableInMdx: false
+		lineageTag: 4281f783-4b1e-405f-b90c-2a8978b8495b
+		summarizeBy: none
+		sourceColumn: DaysFrom
+
+	/// Upper bound of the interval, in days remaining to expiry. Inclusive.
+	column DaysTo
+		dataType: int64
+		isHidden
+		formatString: 0
+		isAvailableInMdx: false
+		lineageTag: 7d68aba1-7d8d-4cee-acc2-4cafa61f5681
+		summarizeBy: none
+		sourceColumn: DaysTo
+
+	partition ExpiryInterval = m
+		mode: import
+		queryGroup: Model
+		source =
+				let
+				    // Days-to-expiry intervals. Bounds are inclusive; negative days mean already expired.
+				    Source = Table.FromRows(
+				        {
+				            {"Expired", 1, -99999, -1},
+				            {"0-30 days", 2, 0, 30},
+				            {"31-60 days", 3, 31, 60},
+				            {"61-90 days", 4, 61, 90},
+				            {"91-180 days", 5, 91, 180},
+				            {"180+ days", 6, 181, 99999}
+				        },
+				        type table [Interval = Text.Type, SortOrder = Int64.Type, DaysFrom = Int64.Type, DaysTo = Int64.Type]
+				    )
+				in
+				    Source
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

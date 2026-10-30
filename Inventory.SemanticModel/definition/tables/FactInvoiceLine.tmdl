@@ -1,0 +1,160 @@
+/// Document lines, sales and purchases: one row per document line. The sales-velocity input of every cover and replenishment measure, and the purchase prices behind the derived unit cost. Window: 1 January of the prior year onwards.
+table FactInvoiceLine
+	lineageTag: c5678de0-15e5-492f-ac29-e85816817ddd
+
+	/// Document type code. Joins to DimDocumentType, which carries the sales-out and purchase flags.
+	column DocumentTypeId
+		dataType: int64
+		isHidden
+		formatString: 0
+		isAvailableInMdx: false
+		lineageTag: f9ebb9f2-7f04-49ca-ab6e-386bfd303855
+		summarizeBy: none
+		sourceColumn: DocumentTypeId
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Organisational unit the line was issued from. Joins to DimOrgUnit.
+	column OrgUnitId
+		dataType: int64
+		isHidden
+		formatString: 0
+		isAvailableInMdx: false
+		lineageTag: 0e4dc71c-b419-4fae-8132-45ab9c636dd5
+		summarizeBy: none
+		sourceColumn: OrgUnitId
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Document date. Joins to DimDate and drives all time intelligence.
+	column Date
+		dataType: dateTime
+		formatString: dd/mm/yyyy
+		isAvailableInMdx: false
+		lineageTag: e1c2f415-4bc3-4fe4-a75c-4d629b983d65
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Product code. Joins to DimProduct. Text, to match DimProduct[ProductId]; change the two together.
+	column ProductId
+		dataType: string
+		isHidden
+		isAvailableInMdx: false
+		lineageTag: 1068b1a0-68bc-4f90-9290-a5ebafc7e2a6
+		summarizeBy: none
+		sourceColumn: ProductId
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Quantity on the line, in the product's base unit.
+	column Quantity
+		dataType: double
+		isHidden
+		isAvailableInMdx: false
+		lineageTag: ee3a339e-cca8-4952-9252-372340931bf6
+		summarizeBy: none
+		sourceColumn: Quantity
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Document unit price including VAT, before discounts.
+	column DocumentPrice
+		dataType: double
+		isHidden
+		isAvailableInMdx: false
+		lineageTag: 10d9dfb1-24b8-46af-810b-34b3e59185b8
+		summarizeBy: none
+		sourceColumn: DocumentPrice
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Net unit price including VAT: the document price after discounts. Every sales value multiplies quantity by it.
+	column NetPrice
+		dataType: double
+		isHidden
+		isAvailableInMdx: false
+		lineageTag: e74d4b47-e58c-4108-ae68-4240824427a6
+		summarizeBy: none
+		sourceColumn: NetPrice
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Cost unit price without VAT. Cost of sales sets it against selling prices taken out of VAT with ExVatFactor.
+	column UnitCost
+		dataType: double
+		isHidden
+		isAvailableInMdx: false
+		lineageTag: 246bea19-0321-41d2-bb85-77f1c38c1cc6
+		summarizeBy: none
+		sourceColumn: UnitCost
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Supplier unit price without VAT, after discounts. Purchase lines only; blank on every other line.
+	column SupplierPrice
+		dataType: double
+		isHidden
+		isAvailableInMdx: false
+		lineageTag: 73625b9f-5f8c-4368-ab49-db1bbac9dcb5
+		summarizeBy: none
+		sourceColumn: SupplierPrice
+
+		annotation SummarizationSetBy = Automatic
+
+	/// 1 / (1 + the line's VAT rate / 100): the share of a VAT-inclusive price that is without VAT. A blank rate counts as 0%.
+	column ExVatFactor
+		dataType: double
+		isHidden
+		isAvailableInMdx: false
+		lineageTag: ea8a8694-31ce-4c0d-8fb0-02752f7faae7
+		summarizeBy: none
+		sourceColumn: ExVatFactor
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactInvoiceLine = m
+		mode: import
+		queryGroup: Fact
+		source = ```
+				let
+				    // Sales and purchase document lines from 1 January of the prior year.
+				    Source =
+				        Sql.Database(
+				            pServer,
+				            pDatabase,
+				            [
+				                Query = "
+				                SELECT
+				                    l.DocumentTypeId,
+				                    l.OrgUnitId,
+				                    CAST(l.ProductId AS VARCHAR(20)) AS ProductId,
+				                    CAST(l.DocumentDate AS DATE) AS [Date],
+				                    l.Quantity,
+				                    l.UnitPrice AS DocumentPrice,
+				                    l.NetUnitPrice AS NetPrice,
+				                    l.UnitCost,
+				                    l.SupplierUnitPrice AS SupplierPrice,
+				                    l.VatRate
+				                FROM inv.DocumentLine l
+				                -- the product's own flag decides whether its lines count
+				                INNER JOIN inv.Product p
+				                    ON p.ProductId = l.ProductId
+				                WHERE l.DocumentDate >= DATEFROMPARTS(YEAR(GETDATE()) - 1, 1, 1)
+				                  AND p.CountsTowardSales = 1
+				                ",
+				                CommandTimeout = #duration(0, 1, 0, 0)
+				            ]
+				        ),
+				    Typed = Table.TransformColumnTypes(Source, {{"Date", type date}, {"VatRate", type number}}),
+				    // The share of a VAT-inclusive price that is without VAT; the ex-VAT measures multiply by it.
+				    WithExVat = Table.AddColumn(Typed, "ExVatFactor", each 1 / (1 + (if [VatRate] = null then 0 else [VatRate]) / 100), type number),
+				    Result = Table.RemoveColumns(WithExVat, {"VatRate"})
+				in
+				    Result
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

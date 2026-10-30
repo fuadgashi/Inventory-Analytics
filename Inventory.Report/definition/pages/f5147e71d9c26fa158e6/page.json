@@ -1,0 +1,26 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "f5147e71d9c26fa158e6",
+  "displayName": "Stock",
+  "displayOption": "FitToPage",
+  "height": 1080,
+  "width": 1920,
+  "visibility": "HiddenInViewMode",
+  "visualInteractions": [
+    {
+      "source": "ff878d583bd1d3d83e4a",
+      "target": "6e6a5de483e603271ad9",
+      "type": "DataFilter"
+    },
+    {
+      "source": "ff878d583bd1d3d83e4a",
+      "target": "5a3ee13985b062e621c6",
+      "type": "DataFilter"
+    },
+    {
+      "source": "6e6a5de483e603271ad9",
+      "target": "5a3ee13985b062e621c6",
+      "type": "DataFilter"
+    }
+  ]
+}

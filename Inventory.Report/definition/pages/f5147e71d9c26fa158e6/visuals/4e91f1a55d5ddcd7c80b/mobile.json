@@ -1,0 +1,437 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainerMobileState/2.7.0/schema.json",
+  "position": {
+    "x": 0,
+    "y": 285,
+    "z": 1000,
+    "height": 600,
+    "width": 324,
+    "tabOrder": 16000
+  },
+  "objects": {
+    "layout": [
+      {
+        "properties": {
+          "alignment": {
+            "expr": {
+              "Literal": {
+                "Value": "'middle'"
+              }
+            }
+          },
+          "rowCount": {
+            "expr": {
+              "Literal": {
+                "Value": "1L"
+              }
+            }
+          },
+          "autoGrid": {
+            "expr": {
+              "Literal": {
+                "Value": "false"
+              }
+            }
+          },
+          "maxTiles": {
+            "expr": {
+              "Literal": {
+                "Value": "1L"
+              }
+            }
+          },
+          "fixedWidth": {
+            "expr": {
+              "Literal": {
+                "Value": "295L"
+              }
+            }
+          },
+          "fixedHeight": {
+            "expr": {
+              "Literal": {
+                "Value": "150L"
+              }
+            }
+          },
+          "calloutSize": {
+            "expr": {
+              "Literal": {
+                "Value": "35D"
+              }
+            }
+          }
+        }
+      },
+      {
+        "properties": {
+          "bottomOuterMargin": {
+            "expr": {
+              "Literal": {
+                "Value": "370L"
+              }
+            }
+          },
+          "rightOuterMargin": {
+            "expr": {
+              "Literal": {
+                "Value": "5L"
+              }
+            }
+          }
+        },
+        "selector": {
+          "id": "default"
+        }
+      }
+    ],
+    "overFlow": [],
+    "referenceLabelTitle": [
+      {
+        "properties": {
+          "titleFontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "8D"
+              }
+            }
+          }
+        },
+        "selector": {
+          "id": "default"
+        }
+      },
+      {
+        "properties": {
+          "titleFontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "8D"
+              }
+            }
+          }
+        },
+        "selector": {
+          "metadata": "Measure.Stock List Value"
+        }
+      }
+    ],
+    "referenceLabelValue": [
+      {
+        "properties": {
+          "valueFontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "8D"
+              }
+            }
+          }
+        },
+        "selector": {
+          "id": "default"
+        }
+      },
+      {
+        "properties": {
+          "valueFontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "8D"
+              }
+            }
+          }
+        },
+        "selector": {
+          "metadata": "Measure.Stock List Value"
+        }
+      }
+    ],
+    "referenceLabel": [
+      {
+        "properties": {
+          "backgroundShow": {
+            "expr": {
+              "Literal": {
+                "Value": "false"
+              }
+            }
+          }
+        },
+        "selector": {
+          "id": "default"
+        }
+      }
+    ],
+    "value": [
+      {
+        "properties": {
+          "horizontalAlignment": {
+            "expr": {
+              "Literal": {
+                "Value": "'center'"
+              }
+            }
+          },
+          "fontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "12D"
+              }
+            }
+          }
+        },
+        "selector": {
+          "id": "default"
+        }
+      },
+      {
+        "properties": {
+          "fontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "12D"
+              }
+            }
+          },
+          "labelPrecision": {
+            "expr": {
+              "Literal": {
+                "Value": "1L"
+              }
+            }
+          }
+        },
+        "selector": {
+          "metadata": "Measure.Stock List Value"
+        }
+      }
+    ],
+    "image": [
+      {
+        "properties": {
+          "imageAreaSize": {
+            "expr": {
+              "Literal": {
+                "Value": "90L"
+              }
+            }
+          },
+          "size": {
+            "expr": {
+              "Literal": {
+                "Value": "40L"
+              }
+            }
+          }
+        },
+        "selector": {
+          "metadata": "Measure.Stock List Value"
+        }
+      },
+      {
+        "properties": {
+          "imageAreaSize": {
+            "expr": {
+              "Literal": {
+                "Value": "90L"
+              }
+            }
+          },
+          "size": {
+            "expr": {
+              "Literal": {
+                "Value": "100L"
+              }
+            }
+          }
+        },
+        "selector": {
+          "id": "default"
+        }
+      }
+    ],
+    "label": [
+      {
+        "properties": {
+          "fontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "8D"
+              }
+            }
+          }
+        },
+        "selector": {
+          "metadata": "Measure.Stock List Value"
+        }
+      },
+      {
+        "properties": {
+          "fontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "8D"
+              }
+            }
+          }
+        },
+        "selector": {
+          "id": "default"
+        }
+      }
+    ],
+    "spacing": [],
+    "cardCalloutArea": [
+      {
+        "properties": {
+          "paddingIndividual": {
+            "expr": {
+              "Literal": {
+                "Value": "false"
+              }
+            }
+          }
+        },
+        "selector": {
+          "id": "default"
+        }
+      }
+    ],
+    "fillCustom": [],
+    "outline": [],
+    "padding": [
+      {
+        "properties": {
+          "bottomMargin": {
+            "expr": {
+              "Literal": {
+                "Value": "400L"
+              }
+            }
+          },
+          "paddingIndividual": {
+            "expr": {
+              "Literal": {
+                "Value": "true"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "accentBar": [],
+    "divider": [],
+    "referenceLabelLayout": [
+      {
+        "properties": {
+          "style": {
+            "expr": {
+              "Literal": {
+                "Value": "'tabular'"
+              }
+            }
+          },
+          "valueArea": {
+            "expr": {
+              "Literal": {
+                "Value": "40D"
+              }
+            }
+          },
+          "labelSpace": {
+            "expr": {
+              "Literal": {
+                "Value": "10D"
+              }
+            }
+          },
+          "position": {
+            "expr": {
+              "Literal": {
+                "Value": "'right'"
+              }
+            }
+          },
+          "verticalAlignment": {
+            "expr": {
+              "Literal": {
+                "Value": "'middle'"
+              }
+            }
+          },
+          "arrangement": {
+            "expr": {
+              "Literal": {
+                "Value": "'rows'"
+              }
+            }
+          }
+        },
+        "selector": {
+          "id": "default"
+        }
+      }
+    ],
+    "border": [],
+    "referenceLabelDetail": [
+      {
+        "properties": {
+          "detailFontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "8D"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "visualContainerObjects": {
+    "background": [],
+    "border": [],
+    "dropShadow": [],
+    "visualHeader": [],
+    "title": [
+      {
+        "properties": {
+          "fontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "9D"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "subTitle": [
+      {
+        "properties": {
+          "fontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "9D"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "divider": [],
+    "spacing": [],
+    "padding": [
+      {
+        "properties": {
+          "right": {
+            "expr": {
+              "Literal": {
+                "Value": "5D"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

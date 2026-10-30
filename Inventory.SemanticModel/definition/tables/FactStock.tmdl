@@ -1,0 +1,192 @@
+/// Current stock: one row per product lot, in one location of one warehouse, at one stock status. A snapshot taken at each refresh, positive balances only.
+table FactStock
+	lineageTag: b3ea160a-0876-41e1-8259-634f759201aa
+
+	/// Warehouse holding the stock. Joins to DimOrgUnit.
+	column WarehouseId
+		dataType: int64
+		formatString: 0
+		isAvailableInMdx: false
+		lineageTag: 713c27c3-b30e-4d11-8d8d-de2464663983
+		summarizeBy: none
+		sourceColumn: WarehouseId
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Storage location within the warehouse.
+	column LocationId
+		dataType: string
+		isAvailableInMdx: false
+		lineageTag: 300180df-a820-45f4-bea7-06f02fdc2fb0
+		summarizeBy: none
+		sourceColumn: LocationId
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Product code. Joins to DimProduct. Text, to match DimProduct[ProductId]; change the two together.
+	column ProductId
+		dataType: string
+		isAvailableInMdx: false
+		lineageTag: a90daf8d-5f37-43ff-be26-acae2e6debf9
+		summarizeBy: none
+		sourceColumn: ProductId
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Stock status code.
+	column StockStatusId
+		dataType: int64
+		isHidden
+		formatString: 0
+		isAvailableInMdx: false
+		lineageTag: 97ed68fa-279d-40b5-ac17-3c3b3f0ac3f2
+		summarizeBy: none
+		sourceColumn: StockStatusId
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Stock status name. Child level of the sale-readiness slicer.
+	column StockStatus
+		dataType: string
+		isAvailableInMdx: false
+		lineageTag: 67e5928b-5642-401f-a6a1-ff2fb11fcddf
+		summarizeBy: none
+		sourceColumn: StockStatus
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Quantity on hand for this product lot, in the product's base unit.
+	column QuantityOnHand
+		dataType: double
+		isAvailableInMdx: false
+		lineageTag: 3af2997e-03eb-414d-9509-1a068a94a1e1
+		summarizeBy: none
+		sourceColumn: QuantityOnHand
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Expiry date of the lot.
+	column ExpiryDate
+		dataType: dateTime
+		formatString: Long Date
+		isAvailableInMdx: false
+		lineageTag: c66b3e33-b63f-4850-8246-28e3da03ec3f
+		summarizeBy: none
+		sourceColumn: ExpiryDate
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Days until the lot expires, counted from the refresh date. Negative once expired. A day count: never aggregate it.
+	column DaysToExpiry
+		dataType: int64
+		formatString: 0
+		isAvailableInMdx: false
+		lineageTag: 70ea2904-e80c-4f9f-8aed-cde47fc6e979
+		summarizeBy: none
+		sourceColumn: DaysToExpiry
+
+		annotation SummarizationSetBy = Automatic
+
+	/// For Sale where the stock status may be sold, Not for Sale for every other status (expired, damaged, write-off, display and the rest). Parent level of the sale-readiness slicer; nothing selected there means total stock.
+	column SaleReadiness
+		dataType: string
+		isAvailableInMdx: false
+		lineageTag: 76ed2ee7-3977-41c8-9299-8bc226a1dda7
+		summarizeBy: none
+		sourceColumn: SaleReadiness
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Lot (batch) number the stock belongs to.
+	column LotNumber
+		dataType: string
+		isAvailableInMdx: false
+		lineageTag: d5164812-d1aa-4673-8095-fd7afabef02f
+		summarizeBy: none
+		sourceColumn: LotNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Running weighted-average unit cost for this warehouse and product, without VAT: the cost the stock is booked at (IAS 2). Blank where the source holds none. Priced by Stock Cost Value and Stock Carrying Amount; never aggregate it.
+	column UnitCost
+		dataType: double
+		isHidden
+		isAvailableInMdx: false
+		lineageTag: 59a807ba-7fb0-46a5-b717-01fd2e150375
+		summarizeBy: none
+		sourceColumn: UnitCost
+
+		annotation SummarizationSetBy = Automatic
+
+	/// List selling price for this warehouse and product, with VAT, before discount. Each warehouse keeps its own price. Blank where the source holds none. Priced by Stock List Value; never aggregate it.
+	column ListPrice
+		dataType: double
+		isHidden
+		isAvailableInMdx: false
+		lineageTag: f5d8d430-6475-4cb2-a303-26beda8535ea
+		summarizeBy: none
+		sourceColumn: ListPrice
+
+		annotation SummarizationSetBy = Automatic
+
+	/// TRUE where the warehouse tracks stock with a shelf life. The expiry measures filter on it; warehouses that hold non-perishable or non-resale stock are left out. Set in the source query from the warehouse's own flag.
+	column InExpiryScope
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		isAvailableInMdx: false
+		lineageTag: e0de1c83-0169-42a0-a2e7-8d21ebaea961
+		summarizeBy: none
+		sourceColumn: InExpiryScope
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactStock = m
+		mode: import
+		queryGroup: Fact
+		source = ```
+				let
+				    // Current stock by product lot, with days to expiry, cost and list price.
+				    Source =
+				        Sql.Database(
+				            pServer,
+				            pDatabase,
+				            [
+				                Query = "
+				                SELECT
+				                    s.WarehouseId,
+				                    w.TracksShelfLife AS InExpiryScope,
+				                    s.LocationId,
+				                    CAST(s.ProductId AS VARCHAR(20)) AS ProductId,
+				                    s.LotNumber,
+				                    CASE WHEN st.IsSellable = 1 THEN N'For Sale' ELSE N'Not for Sale' END AS SaleReadiness,
+				                    s.StockStatusId,
+				                    st.StockStatusName AS StockStatus,
+				                    s.QuantityOnHand,
+				                    s.UnitCost,
+				                    s.ListPrice,
+				                    s.ExpiryDate,
+				                    DATEDIFF(DAY, CAST(GETDATE() AS DATE), s.ExpiryDate) AS DaysToExpiry
+				                FROM inv.StockLot s
+				                INNER JOIN inv.OrgUnit w
+				                    ON w.OrgUnitId = s.WarehouseId
+				                LEFT JOIN inv.StockStatus st
+				                    ON st.StockStatusId = s.StockStatusId
+				                WHERE w.HoldsStock = 1
+				                  AND s.QuantityOnHand > 0
+				                ",
+				                CommandTimeout = #duration(0, 1, 0, 0)
+				            ]
+				        ),
+				    Typed = Table.TransformColumnTypes(Source, {{"ExpiryDate", type date}, {"UnitCost", type number}, {"ListPrice", type number}, {"InExpiryScope", type logical}})
+				in
+				    Typed
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

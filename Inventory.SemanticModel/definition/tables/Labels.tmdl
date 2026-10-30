@@ -1,0 +1,155 @@
+/// Every user-facing string of the report: one row per owner, label type and culture. Plain data; the label measures read it.
+table Labels
+	lineageTag: 3bce70fb-c930-4326-bfff-ad179e0cebb4
+
+	/// What the label belongs to - a page, a section, a visual or a slicer.
+	column OwnerType
+		dataType: string
+		isHidden
+		isAvailableInMdx: false
+		lineageTag: a35a56bf-eafc-477e-87d9-0ed573fa50c4
+		summarizeBy: none
+		sourceColumn: OwnerType
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Sequential number within the owner type. Never shared across types.
+	column OwnerNumber
+		dataType: int64
+		isHidden
+		formatString: 0
+		isAvailableInMdx: false
+		lineageTag: b0002cd9-ccac-4c0e-b1f6-019d3b769f3e
+		summarizeBy: none
+		sourceColumn: OwnerNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Human-readable name of the thing the label belongs to.
+	column OwnerName
+		dataType: string
+		isHidden
+		isAvailableInMdx: false
+		lineageTag: bca84709-45c5-4759-9688-2d50d800ed66
+		summarizeBy: none
+		sourceColumn: OwnerName
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Which slot on the owner this text fills, such as a title or a subtitle.
+	column LabelType
+		dataType: string
+		isHidden
+		isAvailableInMdx: false
+		lineageTag: ff34e5ab-71de-4238-81b6-4766d7be00f4
+		summarizeBy: none
+		sourceColumn: LabelType
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Language this row's text is written in.
+	column Culture
+		dataType: string
+		isHidden
+		isAvailableInMdx: false
+		lineageTag: f7e54d76-1094-4978-a62f-2b86ae553248
+		summarizeBy: none
+		sourceColumn: Culture
+
+		annotation SummarizationSetBy = Automatic
+
+	/// The text shown to the user. All report text lives here, never in DAX.
+	column Label
+		dataType: string
+		isHidden
+		isAvailableInMdx: false
+		lineageTag: 30a62867-d506-4bf4-9041-d6b959ae835f
+		summarizeBy: none
+		sourceColumn: Label
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Labels = m
+		mode: import
+		queryGroup: Model
+		source =
+				let
+				    // Every user-facing string of the report, one row per OwnerType + OwnerNumber + LabelType + Culture.
+				    // Text lives here, never in DAX: the measures in LabelMeasures are lookups against it.
+				    Source = #table(
+				        type table [OwnerType = text, OwnerNumber = Int64.Type, OwnerName = text, Culture = text, LabelType = text, Label = text],
+				        {
+				        {"Page", 1, "PageNav1", "en-US", "Navigator Title", "Stock"},
+				        {"Page", 1, "Page 1", "en-US", "Subtitle", "Stock value and durability"},
+				        {"Page", 1, "Page 1", "en-US", "Title", "Stock Status"},
+				        {"Page", 2, "PageNav2", "en-US", "Navigator Title", "Expiry"},
+				        {"Page", 2, "Page 2", "en-US", "Subtitle", "Shelf life and durability"},
+				        {"Page", 2, "Page 2", "en-US", "Title", "Stock Expiry"},
+				        {"Page", 3, "PageNav3", "en-US", "Navigator Title", "Order"},
+				        {"Page", 3, "Page 3", "en-US", "Subtitle", "Key insights for ordering"},
+				        {"Page", 3, "Page 3", "en-US", "Title", "Automatic Ordering"},
+				        {"Slicer", 4, "Date", "en-US", "SlicerTitle", "Date Range"},
+				        {"Slicer", 5, "Location", "en-US", "SlicerTitle", "Location"},
+				        {"Slicer", 6, "Lot", "en-US", "SlicerTitle", "Lot Number"},
+				        {"Slicer", 7, "Organisation/Warehouse", "en-US", "SlicerTitle", "Org / Depot"},
+				        {"Slicer", 8, "Division/Product", "en-US", "SlicerTitle", "Division / Article"},
+				        {"Slicer", 9, "Readiness", "en-US", "SlicerTitle", "Stock Readiness"},
+				        {"Visual", 10, "Product Shelf Life", "en-US", "VisualSubtitle", "Product shelf life"},
+				        {"Visual", 11, "Sales Forecast", "en-US", "VisualSubtitle", "Sales projections"},
+				        {"Visual", 12, "Order Preparation", "en-US", "VisualTitle", "Order Preparation"},
+				        {"Visual", 13, "Index Share", "en-US", "VisualTitle", "Index Share"},
+				        {"Visual", 14, "Cover and Turnover", "en-US", "VisualSubtitle", "Stock turnover and durability"},
+				        {"Visual", 15, "Stock Cover", "en-US", "VisualTitle", "Stock Durability"},
+				        {"Visual", 16, "Sales Achievement Chart", "en-US", "VisualSubtitle", "Sales realized"},
+				        {"Visual", 17, "Sales To Date", "en-US", "VisualTitle", "Sales To Date"},
+				        {"Visual", 18, "Sales From Today", "en-US", "VisualTitle", "Sales From Today"},
+				        {"Visual", 19, "Sales Stock", "en-US", "VisualSubtitle", "In sales and stock"},
+				        {"Visual", 20, "Sales Value", "en-US", "MeasureLabel", "Sales Value"},
+				        {"Visual", 21, "Stock Value", "en-US", "MeasureLabel", "Stock Value"},
+				        {"Visual", 22, "Stock Value Chart", "en-US", "VisualTitle", "Stock Value"},
+				        {"Visual", 23, "Days Passed", "en-US", "MeasureLabel", "Days Elapsed"},
+				        {"Visual", 24, "Days Remaining", "en-US", "MeasureLabel", "Days Remaining"},
+				        {"Visual", 25, "Compared with Minimum and Maximum", "en-US", "MeasureLabel", "Compared with minimum and maximum"},
+				        {"Visual", 26, "Selling Value", "en-US", "MeasureLabel", "Sales Value"},
+				        {"Visual", 27, "Alt Expiry Category Filter", "en-US", "VisualSubtitle", "Slicer: Expiry risk band"},
+				        {"Visual", 28, "Alt Working Days Remaining", "en-US", "VisualSubtitle", "KPI card: Working days left"},
+				        {"Visual", 29, "Alt Working Days Passed", "en-US", "VisualSubtitle", "KPI card: Working days passed"},
+				        {"Visual", 30, "Alt Stock Detail by Customer", "en-US", "VisualSubtitle", "Matrix: Stock value, weeks of cover, average monthly and weekly sales and days since the last sale, by supplier and product"},
+				        {"Visual", 31, "Expiry Interval", "en-US", "VisualSubtitle", "Value expired and expiring within 90 days"},
+				        {"Visual", 31, "Expiry Interval", "en-US", "VisualTitle", "Expiry Horizon"},
+				        {"Visual", 32, "Expired Stock", "en-US", "VisualTitle", "Expired"},
+				        {"Visual", 33, "Expiry 30", "en-US", "VisualTitle", "Expires within 30 days"},
+				        {"Visual", 34, "Expiry 90", "en-US", "VisualTitle", "Expires within 90 days"},
+				        {"Visual", 35, "Supplier Risk", "en-US", "VisualSubtitle", "Stock value expiring within 90 days — top 10 brands"},
+				        {"Visual", 35, "Supplier Risk", "en-US", "VisualTitle", "Value at Risk by Brand"},
+				        {"Visual", 36, "Index", "en-US", "MeasureLabel", "Index"},
+				        {"Visual", 37, "Prior Year To Date", "en-US", "MeasureLabel", "Prior Year TD"},
+				        {"Visual", 38, "Interval Value", "en-US", "MeasureLabel", "Interval Value"},
+				        {"Visual", 39, "Weeks of Cover", "en-US", "MeasureLabel", "Durability Week"},
+				        {"Visual", 40, "Alt Tooltip Stock", "en-US", "VisualSubtitle", "Tooltip table: the article's stock - cost, days of cover, days since the last sale, stock expiring within 30 and 90 days, expired stock and the share at risk."},
+				        {"Visual", 41, "Alt Expiry Value at Risk by Brand", "en-US", "VisualSubtitle", "Bar chart: Value at Risk by Brand - stock value expiring within 90 days — top 10 brands."},
+				        {"Visual", 42, "Alt Expiry Expired", "en-US", "VisualSubtitle", "Card: Expired."},
+				        {"Visual", 43, "Alt Expiry Expires within 30 days", "en-US", "VisualSubtitle", "Card: Expires within 30 days."},
+				        {"Visual", 44, "Alt Expiry Expires within 90 days", "en-US", "VisualSubtitle", "Card: Expires within 90 days."},
+				        {"Visual", 45, "Alt Expiry Expiry Horizon", "en-US", "VisualSubtitle", "Column chart: Expiry Horizon - value expired and expiring within 90 days."},
+				        {"Visual", 46, "Alt Expiry Stock Durability", "en-US", "VisualSubtitle", "Table: Stock Durability - product shelf life."},
+				        {"Visual", 47, "Alt Expiry Stock Expiry", "en-US", "VisualSubtitle", "Table: Stock Expiry - product shelf life."},
+				        {"Visual", 48, "Alt Stock Stock Value", "en-US", "VisualSubtitle", "Card: Stock Value - stock turnover and durability."},
+				        {"Visual", 49, "Alt Stock Index Share", "en-US", "VisualSubtitle", "Column and line chart: Index Share - in sales and stock."},
+				        {"Visual", 50, "Alt Stock Stock Value Column and line chart", "en-US", "VisualSubtitle", "Column and line chart: Stock Value - stock turnover and durability."},
+				        {"Visual", 51, "Alt Order Sales From Today", "en-US", "VisualSubtitle", "Line chart: Sales From Today - sales projections."},
+				        {"Visual", 52, "Alt Order Sales To Date", "en-US", "VisualSubtitle", "Line chart: Sales To Date - sales realized."},
+				        {"Visual", 53, "Alt Order Order Preparation", "en-US", "VisualSubtitle", "Table: Order Preparation - key insights for ordering."}
+				        }
+				    ),
+				    // The refresh fails on a duplicate key; wrong text under a valid key is for review to catch.
+				    Guard =
+				        if Table.RowCount(Table.Distinct(Source, {"OwnerType", "OwnerNumber", "LabelType", "Culture"})) = Table.RowCount(Source)
+				        then Source
+				        else error "Labels: duplicate OwnerType + OwnerNumber + LabelType + Culture"
+				in
+				    Guard
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

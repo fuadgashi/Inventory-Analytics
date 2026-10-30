@@ -1,0 +1,221 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainerMobileState/2.8.0/schema.json",
+  "position": {
+    "x": 0,
+    "y": 765,
+    "z": 7000,
+    "height": 400,
+    "width": 324,
+    "tabOrder": 19000
+  },
+  "objects": {
+    "values": [
+      {
+        "properties": {
+          "fontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "8D"
+              }
+            }
+          },
+          "outlineStyle": {
+            "expr": {
+              "Literal": {
+                "Value": "0D"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "columnHeaders": [
+      {
+        "properties": {
+          "fontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "8D"
+              }
+            }
+          },
+          "outlineWeight": {
+            "expr": {
+              "Literal": {
+                "Value": "3D"
+              }
+            }
+          },
+          "outlineStyle": {
+            "expr": {
+              "Literal": {
+                "Value": "4D"
+              }
+            }
+          },
+          "outlineColor": {
+            "solid": {
+              "color": {
+                "expr": {
+                  "Literal": {
+                    "Value": "'#F4F8FA'"
+                  }
+                }
+              }
+            }
+          },
+          "defaultColumnWidth": {
+            "expr": {
+              "Literal": {
+                "Value": "105D"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "grid": [
+      {
+        "properties": {
+          "gridHorizontal": {
+            "expr": {
+              "Literal": {
+                "Value": "true"
+              }
+            }
+          },
+          "gridVertical": {
+            "expr": {
+              "Literal": {
+                "Value": "true"
+              }
+            }
+          },
+          "gridHorizontalColor": {
+            "solid": {
+              "color": {
+                "expr": {
+                  "Literal": {
+                    "Value": "'#F4F8FA'"
+                  }
+                }
+              }
+            }
+          },
+          "gridHorizontalWeight": {
+            "expr": {
+              "Literal": {
+                "Value": "3D"
+              }
+            }
+          },
+          "gridVerticalColor": {
+            "solid": {
+              "color": {
+                "expr": {
+                  "Literal": {
+                    "Value": "'#F4F8FA'"
+                  }
+                }
+              }
+            }
+          },
+          "rowPadding": {
+            "expr": {
+              "Literal": {
+                "Value": "8D"
+              }
+            }
+          },
+          "gridVerticalWeight": {
+            "expr": {
+              "Literal": {
+                "Value": "1D"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "columnFormatting": [],
+    "total": [],
+    "columnWidth": [
+      {
+        "properties": {
+          "value": {
+            "expr": {
+              "Literal": {
+                "Value": "60D"
+              }
+            }
+          }
+        },
+        "selector": {
+          "metadata": "DimProduct.ProductId"
+        }
+      },
+      {
+        "properties": {
+          "value": {
+            "expr": {
+              "Literal": {
+                "Value": "165D"
+              }
+            }
+          }
+        },
+        "selector": {
+          "metadata": "DimProduct.ProductName"
+        }
+      },
+      {
+        "properties": {
+          "value": {
+            "expr": {
+              "Literal": {
+                "Value": "165D"
+              }
+            }
+          }
+        },
+        "selector": {
+          "metadata": "DimProduct.Brand"
+        }
+      }
+    ]
+  },
+  "visualContainerObjects": {
+    "visualHeader": [
+      {
+        "properties": {
+          "show": {
+            "expr": {
+              "Literal": {
+                "Value": "true"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "subTitle": [],
+    "title": [
+      {
+        "properties": {
+          "fontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "9D"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "stylePreset": [],
+    "spacing": [],
+    "padding": [],
+    "background": [],
+    "border": []
+  }
+}

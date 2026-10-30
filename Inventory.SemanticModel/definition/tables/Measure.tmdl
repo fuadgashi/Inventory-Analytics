@@ -1,0 +1,1367 @@
+/// The measure host: every business measure of the model, by subject folder.
+table Measure
+	lineageTag: 395b8708-c53a-4b08-9b45-c21bfe00a99f
+
+	/// Number of warehouse and product rows whose source cost is more than twice, or less than half, the derived cost. A count.
+	measure 'Cost Exceptions Count' =
+			
+			-- Derived cost once per article, and the stock value once per warehouse x article,
+			-- joined and compared in memory. Filtering FactStock inside CALCULATE on a per-article
+			-- variable cost one storage query per article, far slower.
+			-- A derived cost of 0 against a positive ERP cost is an exception (ratio infinite);
+			-- only an article with no derived cost at all cannot be tested.
+			VAR _derived =
+			    SELECTCOLUMNS(
+			        ADDCOLUMNS(
+			            TREATAS( VALUES( FactStock[ProductId] ), DimProduct[ProductId] ),
+			            "@derived_cost", [Unit Cost Derived]
+			        ),
+			        "@product", DimProduct[ProductId] & "",
+			        "@derived_cost", [@derived_cost]
+			    )
+			VAR _rows =
+			    SELECTCOLUMNS(
+			        ADDCOLUMNS(
+			            CALCULATETABLE(
+			                SUMMARIZE( FactStock, FactStock[ProductId], FactStock[WarehouseId], FactStock[UnitCost] ),
+			                KEEPFILTERS( NOT ISBLANK( FactStock[UnitCost] ) )
+			            ),
+			            "@value", CALCULATE( SUM( FactStock[QuantityOnHand] ) ) * FactStock[UnitCost]
+			        ),
+			        "@product", FactStock[ProductId] & "",
+			        "@erp_cost", FactStock[UnitCost],
+			        "@value", [@value]
+			    )
+			VAR _exceptions =
+			    FILTER(
+			        NATURALINNERJOIN( _rows, _derived ),
+			        NOT ISBLANK( [@derived_cost] )
+			            && ( [@erp_cost] > 2 * [@derived_cost] || [@erp_cost] < 0.5 * [@derived_cost] )
+			    )
+			RETURN
+			    -- One row per warehouse x article: UnitCost is a single value for each pair.
+			    COUNTROWS( _exceptions )
+		formatString: #,0
+		displayFolder: Stock\Cost Check
+		lineageTag: 31a39f37-2be9-4c36-abaa-12d034bed287
+
+	/// Average cost per unit sold, weighted by quantity, goods only: service and allowance lines are left out, so unit cost times quantity gives back the cost of sales. Value per unit.
+	measure 'Cost Price' =
+			
+			-- Quantity-weighted: value over quantity, so unit price x quantity gives back the
+			-- money. An average over invoice lines counted a 1-piece line as much as a
+			-- 1,000-piece one and leaned toward small, undiscounted orders.
+			CALCULATE(
+			    DIVIDE( SUMX( FactInvoiceLine, FactInvoiceLine[Quantity] * FactInvoiceLine[UnitCost] ), SUM( FactInvoiceLine[Quantity] ) ),
+			    DimProduct[IsGoods] = TRUE,
+			    DimDocumentType[IsSalesOut] = TRUE()
+			)
+		formatString: #,0.00
+		displayFolder: Calculation Roots\Prices
+		lineageTag: eb1fc954-b614-41cd-b662-b5acfd4127f3
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Cost per unit sold over the rolling twelve months. Value per unit.
+	measure 'Cost Price Twelve Months' =
+			
+			TwelMonth([Cost Price])
+		formatString: #,0.00
+		displayFolder: Prices\Product Prices
+		lineageTag: 3aab486e-58f0-4611-b948-1ca7a4700c2c
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Days of cover over remaining shelf life. At or above 1 the stock expires before it sells. On a product row the plain ratio; above product grain the average of the product ratios, because a ratio of totals pooled across products with very different shelf lives falls outside the range of the rows it summarises.
+	measure 'Cover to Shelf Life Ratio' =
+			
+			IF(
+			    HASONEVALUE( DimProduct[ProductName] ),
+			    [Cover to Shelf Life Ratio Base],
+			    AVERAGEX( VALUES( DimProduct[ProductName] ), [Cover to Shelf Life Ratio Base] )
+			)
+		formatString: 0%;-0%;0%
+		displayFolder: Stock\Balance
+		lineageTag: fe8a187e-9167-42e1-b503-d56e6509c465
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Working days of cover of the fresh stock over its remaining shelf life in working days, for one product. The single definition of the ratio. Expired quantity is left out: it has no shelf life to compare against.
+	measure 'Cover to Shelf Life Ratio Base' =
+			DIVIDE(
+			    DIVIDE(
+			        CALCULATE( [Stock Quantity Expiry Scope], KEEPFILTERS( ISBLANK( FactStock[DaysToExpiry] ) || FactStock[DaysToExpiry] >= 0 ) ),
+			        [Sales Quantity Daily Average]
+			    ),
+			    -- Cover is in working days (sales per working day); the shelf life is in calendar
+			    -- days, so it is put on the same basis: the calendar's share of working days.
+			    [Shelf Life Days] * [Working Days Share]
+			)
+		formatString: 0%;-0%;0%
+		isHidden
+		displayFolder: Stock\Balance
+		lineageTag: 1e74114a-28d9-42b4-87a8-d2c7c29f284c
+
+	/// Latest expiry date among the lots in the shelf-life warehouses. Date.
+	measure 'Expiry Date' =
+			
+			CALCULATE(
+			    MAX(FactStock[ExpiryDate]),
+			    KEEPFILTERS(FactStock[InExpiryScope] = TRUE)
+			)
+		formatString: dd/mm/yyyy
+		displayFolder: Stock\Balance
+		lineageTag: cc92e576-8c48-4212-a4c9-88a76425d551
+
+		annotation PBI_FormatHint = {"isDateTimeCustom":true}
+
+	/// Theme colour name for a days-to-expiry interval on the horizon chart: bad for Expired, neutral up to 60 days, good beyond. Never a hex, so it follows the theme.
+	measure 'Expiry Interval Color' =
+			RagColor(
+			    SWITCH(
+			        SELECTEDVALUE( ExpiryInterval[SortOrder] ),
+			        -- Everything in it is already lost.
+			        1, -1,
+			        -- Real exposure, not yet loss: the theme's neutral colour.
+			        2, 0,
+			        3, 0,
+			        -- Little at risk: 60+ days of remaining life clears the stock's
+			        -- usual cover comfortably.
+			        4, 1,
+			        5, 1,
+			        6, 1
+			    ),
+			    0
+			)
+		isHidden
+		displayFolder: Formatting\RAG Color
+		lineageTag: 7caa043c-4157-4031-b455-ce8480f3116e
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// The product's expiry-risk band, judged on its fresh stock (lots not yet expired, or without a date): At Risk, Watch, Healthy, No Sales or No Expiry Date. Blank when the product has no fresh stock. Expired is not a product band but the expired lots, which the Band slicer shows separately. The one place the band thresholds live.
+	measure 'Expiry Risk Band' =
+			VAR _fresh_quantity =
+			    CALCULATE(
+			        SUM( FactStock[QuantityOnHand] ),
+			        KEEPFILTERS( FactStock[InExpiryScope] = TRUE ),
+			        KEEPFILTERS( ISBLANK( FactStock[DaysToExpiry] ) || FactStock[DaysToExpiry] >= 0 )
+			    )
+			VAR _shelf =
+			    CALCULATE(
+			        DIVIDE( SUMX( FactStock, FactStock[QuantityOnHand] * FactStock[DaysToExpiry] ), SUM( FactStock[QuantityOnHand] ) ),
+			        KEEPFILTERS( NOT ISBLANK( FactStock[DaysToExpiry] ) && FactStock[DaysToExpiry] >= 0 ),
+			        KEEPFILTERS( FactStock[InExpiryScope] = TRUE )
+			    )
+			VAR _cover = DIVIDE( _fresh_quantity, [Sales Quantity Daily Average] )
+			-- Cover in working days against the shelf life in working days (the calendar's share of working days).
+			VAR _ratio = DIVIDE( _cover, _shelf * [Working Days Share] )
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK( _fresh_quantity ) || _fresh_quantity <= 0, BLANK(),
+			        -- The blank causes are tested first, and separately: BLANK() >= 0 is TRUE in DAX,
+			        -- so an untested blank ratio falls through into the healthiest band.
+			        -- No cover means no sales at all: dead stock, not a data gap.
+			        ISBLANK( _cover ), "No Sales",
+			        -- Stock that expires today has 0 days left: the ratio divides by zero and is blank,
+			        -- but the date is not missing. NOT ISBLANK first - BLANK() = 0 is TRUE.
+			        NOT ISBLANK( _shelf ) && _shelf = 0, "At Risk",
+			        -- Cover exists but no shelf life: the fresh lots carry no expiry date.
+			        ISBLANK( _ratio ), "No Expiry Date",
+			        -- At Risk is cover at 80% of the shelf life or more: it may not sell in time. One band:
+			        -- with expired stock in its own band, finer splits hold too few products to act on.
+			        _ratio >= 0.8, "At Risk",
+			        _ratio >= 0.4, "Watch",
+			        "Healthy"
+			    )
+		displayFolder: Stock\Expiry
+		lineageTag: 2fb6341c-5e18-4c7a-b507-fa7bfc3f1871
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Theme colour name for Expiry Risk Status: bad when the row shows expired pieces, otherwise the band's colour - bad for At Risk and No Sales, neutral for Watch and No Expiry Date, good for Healthy. Never a hex, so it follows the theme. Not for display.
+	measure 'Expiry Risk Color' =
+			VAR _selection = VALUES( ExpiryRiskBand[Band] )
+			VAR _show_expired = "Expired" IN _selection
+			VAR _show_fresh = COUNTROWS( EXCEPT( _selection, { "Expired" } ) ) > 0
+			VAR _band =
+			    IF(
+			        _show_fresh,
+			        IF( NOT _show_expired && COUNTROWS( _selection ) = 1, SELECTEDVALUE( ExpiryRiskBand[Band] ), [Expiry Risk Band] )
+			    )
+			VAR _has_expired =
+			    _show_expired && NOT ISBLANK( CALCULATE(
+			        SUM( FactStock[QuantityOnHand] ),
+			        KEEPFILTERS( FactStock[InExpiryScope] = TRUE ),
+			        KEEPFILTERS( FactStock[DaysToExpiry] < 0 )
+			    ) )
+			RETURN
+			    RagColor(
+			        IF(
+			            _has_expired,
+			            -1,
+			            SWITCH( _band, "At Risk", -1, "Watch", 0, "Healthy", 1, "No Sales", -1, "No Expiry Date", 0 )
+			        ),
+			        0
+			    )
+		isHidden
+		displayFolder: Formatting\RAG Color
+		lineageTag: 1fc0f077-8a87-4ae1-8bcc-4e8351db5be4
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Numeric code of the product's band, 2 At Risk to 6 No Expiry Date, matching ExpiryRiskBand[SortOrder], for icon rules that take numbers. Not for display.
+	measure 'Expiry Risk Severity' =
+			
+			SWITCH(
+			    [Expiry Risk Band],
+			    "Expired", 1,
+			    "At Risk", 2,
+			    "Watch", 3,
+			    "Healthy", 4,
+			    "No Sales", 5,
+			    "No Expiry Date", 6,
+			    BLANK()
+			)
+		formatString: 0
+		isHidden
+		displayFolder: Formatting\RAG Color
+		lineageTag: 4dd4be15-3c45-4475-92a9-e327c1422204
+
+	/// What the row holds, with a leading glyph: the expired pieces and/or the product's band for the fresh stock, as far as the Band slicer shows them. The glyph shapes encode severity, so the column reads without colour. Blank on total rows by design.
+	measure 'Expiry Risk Status' =
+			VAR _selection = VALUES( ExpiryRiskBand[Band] )
+			VAR _show_expired = "Expired" IN _selection
+			VAR _show_fresh = COUNTROWS( EXCEPT( _selection, { "Expired" } ) ) > 0
+			VAR _expired =
+			    IF( _show_expired && NOT ISBLANK( CALCULATE(
+			        SUM( FactStock[QuantityOnHand] ),
+			        KEEPFILTERS( FactStock[InExpiryScope] = TRUE ),
+			        KEEPFILTERS( FactStock[DaysToExpiry] < 0 )
+			    ) ), UNICHAR( 10006 ) & "  Expired" )
+			VAR _band =
+			    IF(
+			        _show_fresh,
+			        IF( NOT _show_expired && COUNTROWS( _selection ) = 1, SELECTEDVALUE( ExpiryRiskBand[Band] ), [Expiry Risk Band] )
+			    )
+			VAR _fresh =
+			    IF( NOT ISBLANK( _band ), SWITCH(
+			                _band,
+			                -- Three-quarter and half circles step down in fill; U+25CF is avoided,
+			                -- most fonts draw it bullet-size.
+			                "At Risk", UNICHAR( 9685 ),
+			                "Watch", UNICHAR( 9681 ),
+			                "Healthy", UNICHAR( 10004 ),
+			                "No Sales", UNICHAR( 8856 ),
+			                "No Expiry Date", UNICHAR( 9676 )
+			            ) & "  " & _band )
+			RETURN
+			    -- Blank unless a single article is in scope: a band has no meaning on a total row.
+			    IF(
+			        HASONEVALUE( DimProduct[ProductName] ),
+			        IF( NOT ISBLANK( _expired ) && NOT ISBLANK( _fresh ), _expired & "  " & UNICHAR( 183 ) & "  " & _fresh, _expired & _fresh )
+			    )
+		displayFolder: Stock\Expiry
+		lineageTag: a8b3cace-0c3a-4ffb-8c9c-df5479218576
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Average net selling price per unit sold, without VAT and after discounts, weighted by quantity. Value per unit.
+	measure 'Net Price ex VAT' =
+			
+			-- Quantity-weighted: value over quantity, so unit price x quantity gives back the
+			-- money. An average over invoice lines counted a 1-piece line as much as a
+			-- 1,000-piece one and leaned toward small, undiscounted orders.
+			CALCULATE(
+			    DIVIDE( SUMX( FactInvoiceLine, FactInvoiceLine[Quantity] * FactInvoiceLine[NetPrice] * FactInvoiceLine[ExVatFactor] ), SUM( FactInvoiceLine[Quantity] ) ),
+			    DimDocumentType[IsSalesOut] = TRUE()
+			)
+		formatString: #,0.00
+		displayFolder: Calculation Roots\Prices
+		lineageTag: ca515ede-63f8-4de4-9354-4b56a5f6859e
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Net price per unit without VAT over the rolling twelve months. Value per unit.
+	measure 'Net Price ex VAT Twelve Months' =
+			
+			TwelMonth([Net Price ex VAT])
+		formatString: #,0
+		displayFolder: Prices\Product Prices
+		lineageTag: d12645b8-d265-4695-b5b2-d1fb3469f9d5
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Quantity still to order: the sales expected for the rest of the year less the stock on hand. Units; negative when stock already covers the rest of the year.
+	measure 'Order Requirement' =
+			
+			[Sales Quantity Actual Year YTG] - [Stock Quantity]
+		formatString: #,0
+		displayFolder: Stock\Balance
+		lineageTag: fb76ceca-91a5-4457-9ebb-02a1bcd0e032
+
+	/// Days since the product's last sale, over every warehouse and customer, up to today. Where the history holds no sale, the days since the history begins (1 January of last year). Days.
+	measure 'Product Days Since Last Sale' =
+			
+			-- The history in FactInvoiceLine starts on 1 January of last year (the source query's window),
+			-- so "never sold" can only mean "not sold since then".
+			VAR _start = DATE( YEAR( TODAY() ) - 1, 1, 1 )
+			VAR _last_date =
+			    CALCULATE(
+			        MAX( FactInvoiceLine[Date] ),
+			        DimDocumentType[IsSalesOut] = TRUE,
+			        REMOVEFILTERS( DimOrgUnit ),
+			        REMOVEFILTERS( DimDate )
+			    )
+			VAR _has_stock = NOT ISEMPTY( FactStock )
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        NOT ISBLANK( _last_date ), DATEDIFF( _last_date, TODAY(), DAY ),
+			        _has_stock, DATEDIFF( _start, TODAY(), DAY )
+			    )
+		formatString: #,0
+		displayFolder: Calculation Roots\Stock
+		lineageTag: 0705ed18-35b0-43ca-b4d5-ecd9e9497035
+
+	/// Average cost per unit bought, after discounts, without VAT, weighted by quantity. Value per unit. The first fallback for stock cost where the source holds none.
+	measure 'Purchase Net Price ex VAT' =
+			
+			CALCULATE(
+			    DIVIDE( SUMX( FactInvoiceLine, FactInvoiceLine[Quantity] * FactInvoiceLine[NetPrice] * FactInvoiceLine[ExVatFactor] ), SUM( FactInvoiceLine[Quantity] ) ),
+			    DimDocumentType[IsPurchase] = TRUE()
+			)
+		formatString: #,0.00
+		isHidden
+		displayFolder: Calculation Roots\Prices
+		lineageTag: 36746f2c-cea3-44fe-a775-e8cf84ff6283
+
+	/// Average regular selling price per unit sold, with VAT and before discounts, weighted by quantity. Value per unit.
+	measure 'Regular Price' =
+			
+			-- Quantity-weighted: value over quantity, so unit price x quantity gives back the
+			-- money. An average over invoice lines counted a 1-piece line as much as a
+			-- 1,000-piece one and leaned toward small, undiscounted orders.
+			CALCULATE(
+			    DIVIDE( SUMX( FactInvoiceLine, FactInvoiceLine[Quantity] * FactInvoiceLine[DocumentPrice] ), SUM( FactInvoiceLine[Quantity] ) ),
+			    DimDocumentType[IsSalesOut] = TRUE()
+			)
+		formatString: #,0.00
+		displayFolder: Calculation Roots\Prices
+		lineageTag: dc373eca-c2f3-4407-9027-251d3b76b044
+
+	/// Regular price per unit over the rolling twelve months. Value per unit.
+	measure 'Regular Price Twelve Months' =
+			
+			TwelMonth([Regular Price])
+		formatString: #,0.00
+		displayFolder: Prices\Product Prices
+		lineageTag: 4f2ea0cc-5d21-4e54-bba6-fe29e9bccd44
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Quantity sold on sales-out documents. Units.
+	measure 'Sales Quantity' =
+			
+			CALCULATE(
+				SUM(FactInvoiceLine[Quantity]),
+			    DimDocumentType[IsSalesOut] = TRUE
+			)
+		displayFolder: Calculation Roots\Sales
+		lineageTag: 62af8b09-8be3-4006-a864-8dea09f3f0bb
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+	/// Quantity sold this year to date: the date slicers' window within this year, cut at today (1 January to today when no slicer is set). Units.
+	measure 'Sales Quantity Actual Year' =
+			
+			YearToDay([Sales Quantity])
+		displayFolder: Sales\Quantity
+		lineageTag: 958d1833-5630-4e7b-91b2-bc4753ebbbcf
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+		changedProperty = IsHidden
+
+	/// Average quantity sold per working day this year, counted from the product's first sale this year (AvgDay). Units per working day.
+	measure 'Sales Quantity Actual Year Daily Average' =
+			-- Per working day since the first sale, not per day WITH a sale: counting only the days
+			-- with a sale would overstate the forecast of the articles with no sales last year.
+			AvgDay( [Sales Quantity Actual Year] )
+		displayFolder: Sales\Quantity
+		lineageTag: c189a5ef-0e26-4afc-875b-1bb6e7b2551e
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+		changedProperty = IsHidden
+
+	/// Quantity expected to sell for the rest of the year: this year's pace per working day, times the working days left, shaped by last year's seasonality. A product with no sales this year takes last year's rest of the year. Units.
+	measure 'Sales Quantity Actual Year YTG' =
+			-- Rest of the year: this year's average per working day (AvgDay, from the product's first sale)
+			-- x remaining working days x last year's season. No sales this year: last year's rest of the year.
+			-- Season: last year's average per working day after today's date / up to it, company-wide (ALL).
+			VAR _season =
+			    CALCULATE(
+			        DIVIDE(
+			            DIVIDE( [Sales Quantity Prior Year YTG], YearToGo( PrevYear( SUM( DimDate[Working Day] ) ) ) ),
+			            DIVIDE( [Sales Quantity Prior Year YTD], YearToDay( PrevYear( SUM( DimDate[Working Day] ) ) ) )
+			        ),
+			        ALL()
+			    )
+			RETURN
+			    IF(
+			        [Sales Quantity Actual Year] > 0,
+			        [Sales Quantity Actual Year Daily Average] * [Working Days Remaining] * _season,
+			        [Sales Quantity Prior Year YTG]
+			    )
+		displayFolder: Sales\Quantity
+		lineageTag: 2ed841fa-fcc9-4141-a7bd-badba4596402
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+		changedProperty = IsHidden
+
+	/// Average quantity sold per working day over the rolling twelve months, counted from the product's first sale in that window (AvgDay), not per day with a sale. Units per working day. Feeds days of cover and the expiry-risk band.
+	measure 'Sales Quantity Daily Average' =
+			-- Per working day (calendar) since the first sale, not per day WITH a sale: AvgDay skipped the
+			-- days without one, so an article sold on a few days read many times its real daily rate and
+			-- its stock looked like far fewer days of cover than it holds.
+			AvgDay( [Sales Quantity Twelve Months] )
+		displayFolder: Sales\Quantity
+		lineageTag: 4285a29d-a9e5-461b-890f-8e4fdb9f0b93
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+		changedProperty = IsHidden
+
+	/// Average quantity sold per working day over the rolling twelve months, shown only where the shelf-life warehouses hold stock. Units per working day.
+	measure 'Sales Quantity Daily Average Expiry Scope' = ```
+			
+			VAR _stock = [Stock Quantity Expiry Scope]
+			VAR _average = [Sales Quantity Daily Average]
+			RETURN 
+			    IF(ISBLANK(_stock) || _stock <= 0, BLANK(), _average)
+			```
+		formatString: #,0
+		displayFolder: Stock\Balance
+		lineageTag: da42955f-d9c1-4421-a89d-628096d2ad96
+
+	/// Quantity sold in the prior year: the date slicers' window one year back, inside last calendar year. Units.
+	measure 'Sales Quantity Prior Year' =
+			
+			PrevYear([Sales Quantity])
+		displayFolder: Sales\Quantity
+		lineageTag: 7abdfdf3-f0cd-4933-b96a-faf47b2ae56d
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+		changedProperty = IsHidden
+
+	/// Quantity sold in the prior year up to the same day: the date slicers' window cut at today, one year back. Units.
+	measure 'Sales Quantity Prior Year YTD' =
+			
+			YearToDay([Sales Quantity Prior Year])
+		displayFolder: Sales\Quantity
+		lineageTag: 37735b27-6a9c-4229-9f99-7e4afd3306f9
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+		changedProperty = IsHidden
+
+	/// Quantity sold in the prior year from today's date one year back to 31 December: last year's rest of the year. Units.
+	measure 'Sales Quantity Prior Year YTG' =
+			
+			YearToGo([Sales Quantity Prior Year])
+		displayFolder: Sales\Quantity
+		lineageTag: 268c0340-b1b5-46de-a91a-a0399cbf15b7
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+		changedProperty = IsHidden
+
+	/// Quantity sold over the rolling twelve months: from twelve months before today, within the date slicers. Units.
+	measure 'Sales Quantity Twelve Months' =
+			
+			TwelMonth([Sales Quantity])
+		displayFolder: Sales\Quantity
+		lineageTag: 38e4e615-0817-4f4d-84c5-9893706d9aa6
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+	/// Sales at the regular selling price, with VAT and before discounts, on sales-out documents. Value.
+	measure 'Sales Selling Price' =
+			
+			CALCULATE(
+			    SUMX(
+			        FactInvoiceLine,
+			        FactInvoiceLine[Quantity] * FactInvoiceLine[DocumentPrice]),
+			    DimDocumentType[IsSalesOut] = TRUE
+			)
+		displayFolder: Calculation Roots\Sales
+		lineageTag: 0120fbab-ad50-4783-8184-1f0ed9c7f000
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+	/// Sales at the regular selling price, with VAT and before discounts, over the rolling twelve months. Value.
+	measure 'Sales Selling Price Twelve Months' =
+			
+			TwelMonth([Sales Selling Price])
+		displayFolder: Sales\Selling Price
+		lineageTag: 498d08ee-9dd0-4c8d-a022-c3022a160c0d
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+	/// Remaining shelf life of the stock not yet expired: days to expiry, weighted by quantity, over the lots with zero or more days left. Days. Blank when every lot has expired or none carries a date, and blank with only Expired selected in the Band slicer.
+	measure 'Shelf Life Days' =
+			-- Weighted by quantity, so a 1-unit lot weighs less than a 10,000-unit one.
+			-- Expired lots are left out: averaged in, a lot weeks past its date beside fresh lots reads
+			-- as a healthy shelf life. NOT ISBLANK guards the >= 0 test, which a blank
+			-- date would pass.
+			VAR _selection = VALUES( ExpiryRiskBand[Band] )
+			VAR _show_expired = "Expired" IN _selection
+			VAR _show_fresh = COUNTROWS( EXCEPT( _selection, { "Expired" } ) ) > 0
+			RETURN
+			    IF(
+			        _show_fresh,
+			        CALCULATE(
+			            DIVIDE( SUMX( FactStock, FactStock[QuantityOnHand] * FactStock[DaysToExpiry] ), SUM( FactStock[QuantityOnHand] ) ),
+			            KEEPFILTERS( NOT ISBLANK( FactStock[DaysToExpiry] ) && FactStock[DaysToExpiry] >= 0 ),
+			            KEEPFILTERS( FactStock[InExpiryScope] = TRUE )
+			        )
+			    )
+		formatString: #,0
+		displayFolder: Stock\Balance
+		lineageTag: 46f5b244-5644-42ec-b8b5-411755bb3d63
+
+	/// Share of stock value, in the shelf-life warehouses, that is expired or expires within 90 days. Percentage.
+	measure 'Stock At Risk %' =
+			
+			VAR _stock =
+			    CALCULATE( [Stock List Value], KEEPFILTERS( FactStock[InExpiryScope] = TRUE ) )
+			RETURN
+			    DIVIDE( [Stock Expired Value] + [Stock Expiring 90 Days], _stock )
+		displayFolder: Lookup\Stock
+		lineageTag: 8dc0bfeb-62fd-4836-939a-b8d9e97c0c7e
+
+		formatStringDefinition =
+				VAR _unit = " ""of stock"""
+				RETURN
+				    "0.0%" & _unit
+
+	/// Carrying amount of stock under IAS 2: the lower of cost and net realisable value, lot by lot. Cost as in Stock Cost Value. Net realisable value is the product's twelve-month net price without VAT over every warehouse, less its division's distribution-cost rate; expired lots have none. A product not sold in twelve months has no measurable net realisable value and stays at cost. Value.
+	measure 'Stock Carrying Amount' =
+			
+			SUMX(
+			    TREATAS( VALUES( FactStock[ProductId] ), DimProduct[ProductId] ),
+			    VAR _net_price =
+			        CALCULATE( [Net Price ex VAT Twelve Months], REMOVEFILTERS( DimOrgUnit ) )
+			    VAR _distribution_cost =
+			        LOOKUPVALUE(
+			            DimDivision[DistributionCostRate],
+			            DimDivision[DivisionId], CALCULATE( SELECTEDVALUE( DimProduct[DivisionId] ) )
+			        )
+			    VAR _nrv =
+			        IF( NOT ISBLANK( _net_price ), MAX( 0, _net_price * ( 1 - _distribution_cost ) ) )
+			    VAR _has_no_cost =
+			        CALCULATE( NOT ISEMPTY( FactStock ), KEEPFILTERS( ISBLANK( FactStock[UnitCost] ) ) )
+			    VAR _derived_cost =
+			        IF( _has_no_cost, [Unit Cost Derived] )
+			    RETURN
+			        -- CALCULATE turns the article row into a filter, so SUMX walks that article's lots.
+			        CALCULATE(
+			            SUMX(
+			                FactStock,
+			                VAR _cost = COALESCE( FactStock[UnitCost], _derived_cost )
+			                VAR _nrv_lot = IF( FactStock[DaysToExpiry] < 0, 0, _nrv )
+			                RETURN
+			                    FactStock[QuantityOnHand] * IF( ISBLANK( _nrv_lot ), _cost, MIN( _cost, _nrv_lot ) )
+			            )
+			        )
+			)
+		formatString: #,0
+		displayFolder: Calculation Roots\Stock
+		lineageTag: 464b4d50-c31a-4885-99b4-f4a5adf5ff99
+
+	/// Stock on hand at cost. Value; a tooltip view of Stock Cost Value.
+	measure 'Stock Cost' =
+			
+			[Stock Cost Value]
+		displayFolder: Lookup\Stock
+		lineageTag: a0d7d884-f57a-4791-82f9-d4f042a35b30
+
+		formatStringDefinition =
+				VAR _unit = ""
+				RETURN
+				    "#,0" & _unit
+
+	/// Stock value at the source cost on the warehouse and product rows whose cost is more than twice, or less than half, the derived cost: the costs to correct at the source. The value stays inside Stock Cost Value; the source is the book and is not overridden. Value.
+	measure 'Stock Cost Exception Value' =
+			
+			-- Derived cost once per article, and the stock value once per warehouse x article,
+			-- joined and compared in memory. Filtering FactStock inside CALCULATE on a per-article
+			-- variable cost one storage query per article, far slower.
+			-- A derived cost of 0 against a positive ERP cost is an exception (ratio infinite);
+			-- only an article with no derived cost at all cannot be tested.
+			VAR _derived =
+			    SELECTCOLUMNS(
+			        ADDCOLUMNS(
+			            TREATAS( VALUES( FactStock[ProductId] ), DimProduct[ProductId] ),
+			            "@derived_cost", [Unit Cost Derived]
+			        ),
+			        "@product", DimProduct[ProductId] & "",
+			        "@derived_cost", [@derived_cost]
+			    )
+			VAR _rows =
+			    SELECTCOLUMNS(
+			        ADDCOLUMNS(
+			            CALCULATETABLE(
+			                SUMMARIZE( FactStock, FactStock[ProductId], FactStock[WarehouseId], FactStock[UnitCost] ),
+			                KEEPFILTERS( NOT ISBLANK( FactStock[UnitCost] ) )
+			            ),
+			            "@value", CALCULATE( SUM( FactStock[QuantityOnHand] ) ) * FactStock[UnitCost]
+			        ),
+			        "@product", FactStock[ProductId] & "",
+			        "@erp_cost", FactStock[UnitCost],
+			        "@value", [@value]
+			    )
+			VAR _exceptions =
+			    FILTER(
+			        NATURALINNERJOIN( _rows, _derived ),
+			        NOT ISBLANK( [@derived_cost] )
+			            && ( [@erp_cost] > 2 * [@derived_cost] || [@erp_cost] < 0.5 * [@derived_cost] )
+			    )
+			RETURN
+			    SUMX( _exceptions, [@value] )
+		formatString: #,0
+		displayFolder: Stock\Cost Check
+		lineageTag: ce5babb0-00bb-479e-acb4-a4e5327fd81a
+
+	/// Stock on hand at cost (IAS 2 weighted average), without VAT, in every warehouse. Each row is valued at the source's running average cost for its warehouse and product; only where none is held does it fall back to Unit Cost Derived. A cost that looks wrong is kept, not overridden: Stock Cost Exception Value lists it. Value.
+	measure 'Stock Cost Value' =
+			
+			VAR _erp_cost =
+			    SUMX( FactStock, FactStock[QuantityOnHand] * FactStock[UnitCost] )
+			VAR _fallback_cost =
+			    -- Only the articles holding stock the ERP has no cost for. The context transition
+			    -- over the TREATAS table filters DimProduct, so the derived cost is priced per article.
+			    SUMX(
+			        TREATAS(
+			            CALCULATETABLE( VALUES( FactStock[ProductId] ), KEEPFILTERS( ISBLANK( FactStock[UnitCost] ) ) ),
+			            DimProduct[ProductId]
+			        ),
+			        CALCULATE( SUM( FactStock[QuantityOnHand] ), KEEPFILTERS( ISBLANK( FactStock[UnitCost] ) ) )
+			            * [Unit Cost Derived]
+			    )
+			RETURN
+			    _erp_cost + _fallback_cost
+		formatString: #,0
+		displayFolder: Calculation Roots\Stock
+		lineageTag: d6b462af-17a5-4193-a972-4d9242258bc2
+
+	/// Days since the product's last sale. Days; a tooltip view of Product Days Since Last Sale, shown with ">" when the last sale is older than the history the model holds.
+	measure 'Stock Days Since Last Sale' =
+			
+			[Product Days Since Last Sale]
+		displayFolder: Lookup\Stock
+		lineageTag: 9d0fa50d-1248-40ec-b021-d6a69ff55727
+
+		formatStringDefinition =
+				VAR _unit = " ""days"""
+				-- at the cap the article has not sold since the history began: say "more than"
+				VAR _limit = DATEDIFF( DATE( YEAR( TODAY() ) - 1, 1, 1 ), TODAY(), DAY )
+				VAR _over = IF( SELECTEDMEASURE() >= _limit, """> """ )
+				RETURN
+				    _over & "#,0" & _unit
+
+	/// Days until the next lot expires, counting only lots still in date that hold stock. Days. Expired lots are left out, so old remnants do not hide the next real expiry; they are in Stock Expired Value.
+	measure 'Stock Days To Next Expiry' =
+			
+			-- Shelf-life warehouses only, as Stock Expired Value and the other expiry measures.
+			CALCULATE(
+			    MIN( FactStock[DaysToExpiry] ),
+			    KEEPFILTERS( FactStock[InExpiryScope] = TRUE ),
+			    KEEPFILTERS( FactStock[DaysToExpiry] >= 0 ),
+			    KEEPFILTERS( FactStock[QuantityOnHand] > 0 )
+			)
+		displayFolder: Lookup\Stock
+		lineageTag: 808a0b36-a1bc-4c75-b2e4-085dcd27f8ac
+
+		formatStringDefinition =
+				VAR _unit = " ""days"""
+				RETURN
+				    "#,0" & _unit
+
+	/// Days the stock lasts at the average quantity sold per working day. Days; a tooltip view of Stock Days of Cover Quantity.
+	measure 'Stock Days of Cover' =
+			
+			[Stock Days of Cover Quantity]
+		displayFolder: Lookup\Stock
+		lineageTag: 664d0a31-d386-4e2f-84cb-6a4a30c4b630
+
+		formatStringDefinition =
+				VAR _unit = " ""days"""
+				RETURN
+				    "#,0" & _unit
+
+	/// Theme colour name for days of cover: bad when the stock lasts longer than its shelf life (Cover to Shelf Life Ratio at or above 1), good otherwise.
+	measure 'Stock Days of Cover Color' =
+			
+			VAR _coverage = [Cover to Shelf Life Ratio]
+			RETURN
+			    IF( NOT ISBLANK( _coverage ), RagColor( 1 - _coverage, 0 ) )
+		isHidden
+		displayFolder: Formatting\RAG Color
+		lineageTag: f368c740-54bb-41dc-9d0c-7e3985dbb772
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Working days the stock in the shelf-life warehouses lasts at the average quantity sold per working day. Days.
+	measure 'Stock Days of Cover Quantity' =
+			
+			DIVIDE(
+				[Stock Quantity Expiry Scope],
+				[Sales Quantity Daily Average],
+				BLANK()
+				)
+		formatString: #,0
+		displayFolder: Stock\Balance
+		lineageTag: 0b00037c-f41a-466e-88d9-89c5a0c3f8b8
+
+	/// Stock value already past its expiry date. Value; a tooltip view of Stock Expired Value.
+	measure 'Stock Expired' =
+			
+			[Stock Expired Value]
+		displayFolder: Lookup\Stock
+		lineageTag: 13e9cb60-c507-4eb9-aa82-d0b6634f5cb4
+
+		formatStringDefinition =
+				VAR _unit = ""
+				RETURN
+				    "#,0" & _unit
+
+	/// Theme colour name for the expired-value row: bad whenever any expired stock remains.
+	measure 'Stock Expired Color' =
+			
+			VAR _expired = [Stock Expired]
+			RETURN
+			    -- RagColor reads higher as better, so the value is negated: any expired stock is bad
+			    IF( NOT ISBLANK( _expired ), RagColor( -_expired, 0 ) )
+		isHidden
+		displayFolder: Formatting\RAG Color
+		lineageTag: daa4b93e-acfd-4590-8ca6-91c140e19d91
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Stock at list price already past its expiry date, in the shelf-life warehouses. Value.
+	measure 'Stock Expired Value' =
+			
+			CALCULATE(
+			    [Stock List Value],
+			    KEEPFILTERS( FactStock[InExpiryScope] = TRUE ),
+			    KEEPFILTERS( FactStock[DaysToExpiry] < 0 )
+			)
+		formatString: #,0
+		displayFolder: Stock\Expiry
+		lineageTag: 0d5e2e66-03e9-470e-a76c-b55fe490aada
+
+	/// Stock at list price expiring in the next 30 days, today included. Shelf-life warehouses only; stock already expired is Stock Expired Value. Value.
+	measure 'Stock Expiring 30 Days' =
+			
+			-- Shelf-life warehouses only, as Stock Expired Value and the other expiry measures.
+			CALCULATE(
+			    [Stock List Value],
+			    KEEPFILTERS( FactStock[InExpiryScope] = TRUE ),
+			    KEEPFILTERS( FactStock[DaysToExpiry] >= 0 ),
+			    KEEPFILTERS( FactStock[DaysToExpiry] <= 30 )
+			)
+		displayFolder: Lookup\Stock
+		lineageTag: d1771d75-c8d8-4fe6-bb63-ce6759a38b63
+
+		formatStringDefinition =
+				VAR _unit = ""
+				RETURN
+				    "#,0" & _unit
+
+	/// Stock at list price expiring in the next 90 days, today included; the 30-day value is part of it. Shelf-life warehouses only. Value.
+	measure 'Stock Expiring 90 Days' =
+			
+			-- Shelf-life warehouses only, as Stock Expired Value and the other expiry measures.
+			CALCULATE(
+			    [Stock List Value],
+			    KEEPFILTERS( FactStock[InExpiryScope] = TRUE ),
+			    KEEPFILTERS( FactStock[DaysToExpiry] >= 0 ),
+			    KEEPFILTERS( FactStock[DaysToExpiry] <= 90 )
+			)
+		displayFolder: Lookup\Stock
+		lineageTag: 37d94b6e-1184-4757-bf09-ad4a5d9464d8
+
+		formatStringDefinition =
+				VAR _unit = ""
+				RETURN
+				    "#,0" & _unit
+
+	/// Stock on hand at list price, with VAT and before discount: each stock row's quantity times the list price of its own warehouse and product. A management view, not a book value; a product with no list price carries none. Value.
+	measure 'Stock List Value' =
+			
+			SUMX( FactStock, FactStock[QuantityOnHand] * FactStock[ListPrice] )
+		displayFolder: Calculation Roots\Stock
+		lineageTag: 1e97d7cc-4ff0-4cc6-91fe-c1b85da29ef7
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+	/// Stock on hand in cases: each stock row's quantity over the product's units per case; blank when zero or below. Cases.
+	measure 'Stock Packs' = ```
+			
+			VAR _total_stock = 
+			        SUMX(
+			            FactStock,
+			            DIVIDE(
+			                FactStock[QuantityOnHand],
+			                RELATED(DimProduct[UnitsPerCase])
+			            )
+			        )
+			RETURN
+			    IF(_total_stock <= 0 || ISBLANK(_total_stock), BLANK(), _total_stock)
+			```
+		formatString: #,0
+		displayFolder: Calculation Roots\Stock
+		lineageTag: 91d8ed6d-7924-4b92-9976-ce16ef3dd0d8
+
+	/// Stock on hand in pallets: each stock row's quantity over units per case times cases per pallet; blank when zero or below. Pallets.
+	measure 'Stock Pallets' = ```
+			
+			VAR _total_stock = 
+			        SUMX(
+			            FactStock,
+			            DIVIDE(
+			                FactStock[QuantityOnHand],
+			                RELATED(DimProduct[UnitsPerCase]) * RELATED(DimProduct[CasesPerPallet])
+			            )
+			        )
+			RETURN
+			    IF(_total_stock <= 0 || ISBLANK(_total_stock), BLANK(), _total_stock)
+			```
+		formatString: #,0
+		displayFolder: Calculation Roots\Stock
+		lineageTag: fd8c09b5-fc8d-41a8-94f3-1bfc8f835926
+
+	/// Stock on hand in pallets. Pallets; a tooltip view of Stock Pallets.
+	measure 'Stock Pallets Count' =
+			
+			[Stock Pallets]
+		displayFolder: Lookup\Stock
+		lineageTag: 24e17355-099e-4232-96d7-2a8c030fba2f
+
+		formatStringDefinition =
+				VAR _unit = " ""pallets"""
+				RETURN
+				    "#,0" & _unit
+
+	/// Products with stock on hand. A count; iterates the product dimension, not the stock table.
+	measure 'Stock Products Count' =
+			
+			COUNTROWS( FILTER( VALUES( DimProduct[ProductId] ), [Stock Quantity] > 0 ) )
+		displayFolder: Lookup\Stock
+		lineageTag: 1f69079b-0336-4077-9926-68c6927e47c1
+
+		formatStringDefinition =
+				VAR _unit = " ""products"""
+				RETURN
+				    "#,0" & _unit
+
+	/// Stock on hand in the selected warehouses, in the product's base unit; blank when zero or below. Units.
+	measure 'Stock Quantity' = ```
+			
+			VAR _total_stock = 
+			        SUM(FactStock[QuantityOnHand])
+			RETURN 
+			    IF(
+			        ISBLANK(_total_stock) || _total_stock <= 0,
+			        BLANK(),
+			        _total_stock
+			    )
+			```
+		formatString: #,0
+		displayFolder: Calculation Roots\Stock
+		lineageTag: 8eb8b406-b993-44c4-84d1-8df9b4b7a4bb
+
+		changedProperty = IsHidden
+
+	/// Stock quantity in the warehouses that track shelf life. Units. Follows the Band slicer: with Expired selected it counts the expired lots only, with any other band the lots not yet expired or without a date; with nothing selected, and on pages without that slicer, all of it.
+	measure 'Stock Quantity Expiry Scope' =
+			VAR _selection = VALUES( ExpiryRiskBand[Band] )
+			VAR _show_expired = "Expired" IN _selection
+			VAR _show_fresh = COUNTROWS( EXCEPT( _selection, { "Expired" } ) ) > 0
+			VAR _all =
+			    CALCULATE(
+			        SUM( FactStock[QuantityOnHand] ),
+			        KEEPFILTERS( FactStock[InExpiryScope] = TRUE )
+			    )
+			VAR _result =
+			    SWITCH(
+			        TRUE(),
+			        _show_expired && _show_fresh, _all,
+			        _show_expired,
+			            CALCULATE(
+			        SUM( FactStock[QuantityOnHand] ),
+			        KEEPFILTERS( FactStock[InExpiryScope] = TRUE ),
+			        KEEPFILTERS( FactStock[DaysToExpiry] < 0 )
+			    ),
+			        CALCULATE(
+			            SUM( FactStock[QuantityOnHand] ),
+			            KEEPFILTERS( FactStock[InExpiryScope] = TRUE ),
+			            KEEPFILTERS( ISBLANK( FactStock[DaysToExpiry] ) || FactStock[DaysToExpiry] >= 0 )
+			        )
+			    )
+			RETURN
+			    IF( ISBLANK( _result ) || _result <= 0, BLANK(), _result )
+		formatString: #,0
+		displayFolder: Calculation Roots\Stock
+		lineageTag: e7d944db-c5ff-4f72-9520-8fbd3570c1df
+
+	/// Stock on hand at the regular selling price, before discounts: each product's quantity times one price per product, its twelve-month regular price over every warehouse. A management view, not a book value. Value.
+	measure 'Stock Regular Price Value' =
+			
+			-- Iterates the articles in stock, not the stock rows: a row-level context transition
+			-- would carry the row's warehouse to FactInvoiceLine and price every warehouse at its own sales,
+			-- so warehouses without sales would be 0.
+			SUMX(
+			    TREATAS( VALUES( FactStock[ProductId] ), DimProduct[ProductId] ),
+			    CALCULATE( SUM( FactStock[QuantityOnHand] ) )
+			        * CALCULATE( [Regular Price Twelve Months], REMOVEFILTERS( DimOrgUnit ) )
+			)
+		formatString: #,0
+		displayFolder: Calculation Roots\Stock
+		lineageTag: 7885f0b4-7263-4ccd-9f91-a71414ffe822
+
+	/// Share of total stock value. Percentage; a tooltip view of Stock Value Share.
+	measure 'Stock Share' =
+			
+			[Stock Value Share]
+		displayFolder: Lookup\Stock
+		lineageTag: 01838276-6e25-4c97-941e-3a6b67d92523
+
+		formatStringDefinition =
+				VAR _unit = " ""of total stock"""
+				RETURN
+				    "0.0%" & _unit
+
+	/// Stock on hand in the product's base unit. Units; a tooltip view of Stock Quantity.
+	measure 'Stock Units' =
+			
+			[Stock Quantity]
+		displayFolder: Lookup\Stock
+		lineageTag: 1ceab8d2-eb21-422b-82bb-6edc4c9ae044
+
+		formatStringDefinition =
+				VAR _unit = " ""units"""
+				RETURN
+				    "#,0" & _unit
+
+	/// Stock on hand at list price. Value; a tooltip view of Stock List Value.
+	measure 'Stock Value' =
+			
+			[Stock List Value]
+		displayFolder: Lookup\Stock
+		lineageTag: 78c40518-7b80-4e5e-aa93-63d321c9fedb
+
+		formatStringDefinition =
+				VAR _unit = ""
+				RETURN
+				    "#,0" & _unit
+
+	/// The row's share of stock value at list price, every filter removed. Percentage.
+	measure 'Stock Value Share' =
+			
+			DIVIDE(
+				[Stock List Value],
+					CALCULATE(
+						[Stock List Value],
+						ALL()
+					),
+			    	0
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: Stock\Balance
+		lineageTag: 28e93443-22a1-4349-ae4b-0990eec5e1f2
+
+	/// Stock at list price expiring inside the selected interval, or span of intervals: it keeps the lots whose days to expiry fall between the lowest DaysFrom and the highest DaysTo in scope, so several adjacent intervals give one continuous span. Shelf-life warehouses only. Value.
+	measure 'Stock Value by Expiry Interval' =
+			
+			VAR _min = MIN( ExpiryInterval[DaysFrom] )
+			VAR _max = MAX( ExpiryInterval[DaysTo] )
+			RETURN
+			    CALCULATE(
+			        [Stock List Value],
+			        KEEPFILTERS( FactStock[InExpiryScope] = TRUE ),
+			        KEEPFILTERS( FactStock[DaysToExpiry] >= _min ),
+			        KEEPFILTERS( FactStock[DaysToExpiry] <= _max )
+			    )
+		formatString: #,0
+		displayFolder: Stock\Expiry
+		lineageTag: d6543b16-f818-4d85-b026-851794142b94
+
+	/// Weeks the stock value lasts at the average weekly sales. Weeks; a tooltip view of Stock Weeks of Cover Value.
+	measure 'Stock Weeks of Cover' =
+			
+			[Stock Weeks of Cover Value]
+		displayFolder: Lookup\Stock
+		lineageTag: f38082df-33ce-4c98-a8dc-85eb6ed67e49
+
+		formatStringDefinition =
+				VAR _unit = " ""weeks"""
+				RETURN
+				    "#,0.0" & _unit
+
+	/// Weeks the stock quantity lasts at this year's average weekly quantity sold. Weeks.
+	measure 'Stock Weeks of Cover Quantity' =
+			-- Weekly quantity this year: per week of working days since the article's first sale this year, not per
+			-- week with a sale (AvgDay)
+			VAR _weekly_quantity = AvgDay( [Sales Quantity Actual Year] ) * [Working Days per Week]
+			RETURN
+				DIVIDE( [Stock Quantity], _weekly_quantity, BLANK() )
+		formatString: #,0.00000
+		displayFolder: Stock\Balance
+		lineageTag: daf94a68-2250-4c61-978a-93b0249dcf5f
+
+		changedProperty = IsHidden
+
+	/// Weeks of stock cover by value: stock at list price over the twelve-month average weekly sales at the regular price, both with VAT and before discounts, so the two sides share one price basis. Weeks.
+	measure 'Stock Weeks of Cover Value' =
+			-- Stock List Value is priced at the list price, before discounts; dividing it by net sales
+			-- (after discounts) stretched the cover by the average discount. The regular price on
+			-- the invoice is the sales-side twin of the list price.
+			-- Per working day (calendar) since the first sale, not per day WITH a sale: counting only
+			-- the days with a sale would read a rarely sold article many times its real daily rate,
+			-- and its cover far too short.
+			DIVIDE(
+			    [Stock List Value],
+			    AvgDay( [Sales Selling Price Twelve Months] ) * [Working Days per Week]
+			)
+		formatString: #,0.00
+		displayFolder: Stock\Balance
+		lineageTag: 2d3f2f38-2e74-4ae6-9d5d-e3d76edc44a1
+
+	/// Stock at cost of products with no sale in twelve months. Value; a tooltip view of Stock Without Sales Twelve Months.
+	measure 'Stock Without Sales' =
+			
+			[Stock Without Sales Twelve Months]
+		displayFolder: Lookup\Stock
+		lineageTag: 824325d2-e3d6-4ff2-bd43-c60619ea9200
+
+		formatStringDefinition =
+				VAR _unit = ""
+				RETURN
+				    "#,0" & _unit
+
+	/// Stock at cost of products with no sale in the last twelve months: slow-moving stock, shown separately for a provision decision. It stays inside Stock Cost Value, and at cost in Stock Carrying Amount. Value.
+	measure 'Stock Without Sales Twelve Months' =
+			
+			-- "No sale in 12 months" = no 12-month net price over any warehouse, the same test that
+			-- leaves these articles at cost in Stock Carrying Amount, so the two always agree.
+			SUMX(
+			    TREATAS( VALUES( FactStock[ProductId] ), DimProduct[ProductId] ),
+			    VAR _price = CALCULATE( [Net Price ex VAT Twelve Months], REMOVEFILTERS( DimOrgUnit ) )
+			    VAR _cost = CALCULATE( [Stock Cost Value] )
+			    RETURN
+			        IF( ISBLANK( _price ), _cost )
+			)
+		formatString: #,0
+		displayFolder: Calculation Roots\Stock
+		lineageTag: fb791e3b-49f1-46ea-b2e0-bdecb72be243
+
+	/// Stock write-down under IAS 2: cost (Stock Cost Value) less carrying amount (Stock Carrying Amount), expired lots included. Value; positive is a write-down.
+	measure 'Stock Write-Down' =
+			
+			[Stock Cost Value] - [Stock Carrying Amount]
+		formatString: #,0
+		displayFolder: Calculation Roots\Stock
+		lineageTag: ad5a2011-5b98-4043-bdad-baa06da387fd
+
+	/// Theme colour name for a brand's at-risk stock: the colour of the interval that holds the largest share of its at-risk value, so it matches the horizon chart. Bar length carries the amount; the colour carries how soon.
+	measure 'Supplier Expiry Risk Color' =
+			VAR _expired = CALCULATE( [Stock Value by Expiry Interval], ExpiryInterval[SortOrder] = 1 ) + 0
+			VAR _bucket_30 = CALCULATE( [Stock Value by Expiry Interval], ExpiryInterval[SortOrder] = 2 ) + 0
+			VAR _bucket_60 = CALCULATE( [Stock Value by Expiry Interval], ExpiryInterval[SortOrder] = 3 ) + 0
+			VAR _bucket_90 = CALCULATE( [Stock Value by Expiry Interval], ExpiryInterval[SortOrder] = 4 ) + 0
+			VAR _largest = MAX( MAX( _expired, _bucket_30 ), MAX( _bucket_60, _bucket_90 ) )
+			RETURN
+			    IF(
+			        _largest <> 0,
+			        RagColor(
+			            SWITCH(
+			                TRUE(),
+			                -- Ties fall to the more urgent interval, which is the safe direction.
+			                _expired = _largest, -1,
+			                _bucket_30 = _largest, 0,
+			                _bucket_60 = _largest, 0,
+			                1
+			            ),
+			            0
+			        )
+			    )
+		isHidden
+		displayFolder: Formatting\RAG Color
+		lineageTag: 826e7ccd-4e65-400a-ab56-3ddac4ac6f9c
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Derived unit cost of a product, without VAT: the twelve-month purchase cost after discounts, else the twelve-month cost on sales lines, else the cost on its last purchase or sale. One cost per product, whatever the warehouse. Prices the stock the source holds no cost for, and checks the cost it does hold. Value per unit.
+	measure 'Unit Cost Derived' =
+			
+			VAR _purchases_12m =
+			    CALCULATE( TwelMonth( [Purchase Net Price ex VAT] ), REMOVEFILTERS( DimOrgUnit ) )
+			VAR _sales_12m =
+			    CALCULATE( [Cost Price Twelve Months], REMOVEFILTERS( DimOrgUnit ) )
+			VAR _last_date =
+			    CALCULATE(
+			        MAX( FactInvoiceLine[Date] ),
+			        REMOVEFILTERS( DimOrgUnit ),
+			        REMOVEFILTERS( DimDate ),
+			        FILTER( ALL( DimDocumentType[IsPurchase], DimDocumentType[IsSalesOut] ), DimDocumentType[IsPurchase] || DimDocumentType[IsSalesOut] )
+			    )
+			VAR _last_cost =
+			    CALCULATE(
+			        COALESCE( [Purchase Net Price ex VAT], [Cost Price] ),
+			        REMOVEFILTERS( DimOrgUnit ),
+			        REMOVEFILTERS( DimDate ),
+			        DimDate[Date] = _last_date
+			    )
+			RETURN
+			    COALESCE( _purchases_12m, _sales_12m, _last_cost )
+		formatString: #,0.00
+		displayFolder: Stock\Cost Check
+		lineageTag: 3521210d-e2e3-4a48-8a23-6a1c3a4a7103
+
+	/// The source's running average unit cost, without VAT, weighted by the stock quantity it applies to: the IAS 2 cost the stock is booked at. Blank where no cost is held. Value per unit.
+	measure 'Unit Cost ERP' =
+			
+			DIVIDE(
+			    SUMX( FactStock, FactStock[QuantityOnHand] * FactStock[UnitCost] ),
+			    CALCULATE( SUM( FactStock[QuantityOnHand] ), KEEPFILTERS( NOT ISBLANK( FactStock[UnitCost] ) ) )
+			)
+		formatString: #,0.00
+		displayFolder: Stock\Cost Check
+		lineageTag: b642c6cb-7407-4c48-8204-ddf644d515a9
+
+	/// Source unit cost over derived unit cost. Above 2 or below 0.5 the source cost is listed as an exception to correct. A ratio.
+	measure 'Unit Cost Ratio ERP/Derived' =
+			
+			DIVIDE( [Unit Cost ERP], [Unit Cost Derived] )
+		formatString: #,0.00
+		displayFolder: Stock\Cost Check
+		lineageTag: 828acaad-d2f4-4c5d-8101-b62f5db1d415
+
+	/// Working days after today up to the end of the period in the date slicers, from the calendar. Days.
+	measure 'Working Days Remaining' =
+			VAR _end = MAX( DimDate[Date] )
+			RETURN
+				-- Working days come from the calendar (DimDate[Working Day]); the rule lives in the DimDate query
+				-- KEEPFILTERS: the days stay inside the date slicers' selection the visual already has
+				CALCULATE(
+					SUM( DimDate[Working Day] ),
+					KEEPFILTERS( DimDate[Date] > TODAY() ),
+					KEEPFILTERS( DimDate[Date] <= _end )
+				)
+		formatString: 0
+		displayFolder: Calendar\Working Days
+		lineageTag: 54d474b5-e5eb-4cc4-ace8-5693eb4bee3d
+
+		changedProperty = IsHidden
+
+	/// Share of calendar days that are working days, from the calendar. A ratio that puts a span in calendar days, such as shelf life, on the same basis as a cover in working days.
+	measure 'Working Days Share' =
+			DIVIDE(
+				CALCULATE( SUM( DimDate[Working Day] ), REMOVEFILTERS( DimDate ) ),
+				CALCULATE( COUNTROWS( DimDate ), REMOVEFILTERS( DimDate ) )
+			)
+		formatString: 0.0000
+		isHidden
+		displayFolder: Calendar\Working Days
+		lineageTag: 5fd47979-30d7-4699-82dd-54d2a7568915
+
+	/// Working days in a week, from the calendar. Days. Turns a per-day average into a weekly one.
+	measure 'Working Days per Week' = CALCULATE( DISTINCTCOUNT( DimDate[Day Week] ), REMOVEFILTERS( DimDate ), DimDate[Working Day] = 1 )
+		formatString: 0
+		isHidden
+		displayFolder: Calendar\Working Days
+		lineageTag: 53664b98-32e2-497a-bbf2-fd6b0b363640
+
+	/// Change in net sales: this year to date against the prior year up to the same day, (actual - prior) / prior. Shown with an arrow, up above zero and down below.
+	measure 'Index Sales Net Price Actual/Prior YTD' =
+			
+			VAR _actual_year = YearToDay([Sales Net Price])
+			VAR _prior_year_to_date   = YearToDay(PrevYear([Sales Net Price]))
+			RETURN
+			IndexDif(_actual_year, _prior_year_to_date)
+		displayFolder: Sales\Net Price
+		lineageTag: 36cc9859-30a4-414e-9a26-cfa5bcf532a9
+
+		formatStringDefinition = IndexFormat(SELECTEDMEASURE(), 0)
+
+		changedProperty = IsHidden
+
+	/// Change in quantity sold: this year to date against the prior year up to the same day, (actual - prior) / prior. Shown with an arrow, up above zero and down below.
+	measure 'Index Sales Quantity Actual/Prior YTD' =
+			
+			IndexDif([Sales Quantity Actual Year], [Sales Quantity Prior Year YTD])
+		displayFolder: Sales\Quantity
+		lineageTag: d7d656e7-a804-4bd9-9f6b-7a9b401282fd
+
+		formatStringDefinition = IndexFormat(SELECTEDMEASURE(), 0)
+
+		annotation RagColor = UpIsGood
+
+	/// Theme colour name for [Index Sales Quantity Actual/Prior YTD]: good when it rises, neutral at 0, blank when it is blank. Generated by scripts/rag_colors.py from the RagColor annotation on [Index Sales Quantity Actual/Prior YTD]; edit the annotation, not this measure.
+	measure 'Index Sales Quantity Actual/Prior YTD Color' = RagColor( [Index Sales Quantity Actual/Prior YTD], 0 )
+		isHidden
+		displayFolder: Formatting\RAG Color
+		lineageTag: 14609b45-e7d8-4df5-85b8-e4872368a30c
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Net sales: quantity times the net price the customer pays, after discounts and with VAT, on sales-out documents. The one sales figure of the model: call it, never rebuild it. Value.
+	measure 'Sales Net Price' =
+			
+			CALCULATE(
+			    SUMX(
+			        FactInvoiceLine,
+			        FactInvoiceLine[Quantity] * FactInvoiceLine[NetPrice]),
+			    DimDocumentType[IsSalesOut] = TRUE
+			)
+		displayFolder: Calculation Roots\Sales
+		lineageTag: 8b83bc41-5729-4d66-a2cc-011fb26c9273
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+	/// Net sales this year to date: the date slicers' window within this year, cut at today (1 January to today when no slicer is set). Value.
+	measure 'Sales Net Price Actual Year' =
+			
+			YearToDay([Sales Net Price])
+		displayFolder: Sales\Net Price
+		lineageTag: f40e9701-a9b9-4c04-9ae5-1a5b19f4633e
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+		changedProperty = IsHidden
+
+	/// Average monthly net sales over the rolling twelve months, per month of working days since the product's first sale in that window (AvgDay times Working Days per Month). Value per month.
+	measure 'Sales Net Price Monthly Average' =
+			-- Per month of working days (calendar) since the first sale, not per month WITH a sale:
+			-- counting only the months with a sale would read a rarely sold article as if it sold
+			-- every month, and its cover far too short.
+			AvgDay( [Sales Net Price Twelve Months] ) * [Working Days per Month]
+		displayFolder: Sales\Net Price
+		lineageTag: 838d4a9b-3303-41c2-b6c6-d21738b0ddbd
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+	/// Net sales in the prior year: the date slicers' window one year back, inside last calendar year. Value.
+	measure 'Sales Net Price Prior Year' =
+			
+			PrevYear([Sales Net Price])
+		displayFolder: Sales\Net Price
+		lineageTag: efed6e2b-2ab6-4806-806a-1e51593e204c
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+		changedProperty = IsHidden
+
+	/// Net sales in the prior year up to the same day: the date slicers' window cut at today, one year back. Value.
+	measure 'Sales Net Price Prior Year YTD' =
+			
+			YearToDay([Sales Net Price Prior Year])
+		displayFolder: Sales\Net Price
+		lineageTag: 615335b3-f4a8-4ac4-afe0-b79184aa06bf
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+		changedProperty = IsHidden
+
+	/// Net sales over the rolling twelve months: from twelve months before today, within the date slicers. Value.
+	measure 'Sales Net Price Twelve Months' =
+			
+			TwelMonth([Sales Net Price])
+		displayFolder: Sales\Net Price
+		lineageTag: 72bc625f-7801-475a-8358-cef6f08b1f8f
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+	/// The row's share of all net sales over the rolling twelve months, every filter removed. Percentage.
+	measure 'Sales Net Price Twelve Months Share' = ```
+			DIVIDE(
+						[Sales Net Price Twelve Months],
+						CALCULATE(
+							[Sales Net Price Twelve Months],
+							ALL()
+						),
+						0
+					)
+				
+			```
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: Sales\Share
+		lineageTag: dc81f5e1-d98a-4c0c-a986-31d5587a89f0
+
+		changedProperty = IsHidden
+
+	/// Average weekly net sales over the rolling twelve months, per week of working days since the product's first sale in that window (AvgDay times Working Days per Week). Value per week.
+	measure 'Sales Net Price Weekly Average' =
+			-- Per week of working days (calendar) since the first sale, not per week WITH a sale:
+			-- counting only the weeks with a sale would read a rarely sold article as if it sold
+			-- every week, and its cover far too short.
+			AvgDay( [Sales Net Price Twelve Months] ) * [Working Days per Week]
+		displayFolder: Sales\Net Price
+		lineageTag: f919287f-e253-47df-9a14-37e9d01ffe1f
+
+		formatStringDefinition = NumberFormat(SELECTEDMEASURE(), FALSE)
+
+		changedProperty = IsHidden
+
+	/// Working days this year before today, within the date slicers, from the calendar. Days.
+	measure 'Working Days Passed' =
+			VAR _year_start = DATE( YEAR( TODAY() ), 1, 1 )
+			RETURN
+				-- Working days come from the calendar (DimDate[Working Day]); the rule lives in the DimDate query
+				-- KEEPFILTERS: the days stay inside the date slicers' selection the visual already has
+				CALCULATE(
+					SUM( DimDate[Working Day] ),
+					KEEPFILTERS( DimDate[Date] >= _year_start ),
+					KEEPFILTERS( DimDate[Date] < TODAY() )
+				)
+		formatString: 0
+		displayFolder: Calendar\Working Days
+		lineageTag: 0fa3e801-adf4-4718-b201-25010c45038c
+
+		changedProperty = IsHidden
+
+	/// Average working days in a month, from the calendar: its working days over its months. Days. Turns a per-day average into a monthly one.
+	measure 'Working Days per Month' =
+			DIVIDE(
+				CALCULATE( SUM( DimDate[Working Day] ), REMOVEFILTERS( DimDate ) ),
+				CALCULATE( DISTINCTCOUNT( DimDate[YearMonthKey] ), REMOVEFILTERS( DimDate ) )
+			)
+		formatString: 0.00
+		isHidden
+		displayFolder: Calendar\Working Days
+		lineageTag: 358b0e5a-def4-4009-aafa-19dfbaf23f23
+
+	partition Measure = m
+		mode: import
+		queryGroup: Model
+		source =
+				let
+				    // Query group: Model
+				    // Generic measure-table scaffold - an empty table that hosts measures
+				    // only. Zero columns by design: with no visible columns and at least
+				    // one measure, Power BI shows the calculator icon and pins the table
+				    // to the top of the Fields pane.
+				    Source = #table({}, {})
+				in
+				    Source
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

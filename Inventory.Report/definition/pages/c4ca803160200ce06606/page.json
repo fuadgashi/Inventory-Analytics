@@ -1,0 +1,26 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "c4ca803160200ce06606",
+  "displayName": "Expiry",
+  "displayOption": "FitToPage",
+  "height": 1080,
+  "width": 1920,
+  "visibility": "HiddenInViewMode",
+  "visualInteractions": [
+    {
+      "source": "ccda6534a101edceafe0",
+      "target": "b4b1b14f49730402984e",
+      "type": "DataFilter"
+    },
+    {
+      "source": "bec82ac0d5c218aeb1e7",
+      "target": "605c9463bdfb7f5ef6da",
+      "type": "DataFilter"
+    },
+    {
+      "source": "8e76d3981b7b3e0a4376",
+      "target": "ccda6534a101edceafe0",
+      "type": "NoFilter"
+    }
+  ]
+}

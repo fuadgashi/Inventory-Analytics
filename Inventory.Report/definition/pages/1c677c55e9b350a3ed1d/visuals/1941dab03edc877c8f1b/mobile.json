@@ -1,0 +1,173 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainerMobileState/2.5.0/schema.json",
+  "position": {
+    "x": 0,
+    "y": 475,
+    "z": 2000,
+    "height": 180,
+    "width": 324,
+    "tabOrder": 18000
+  },
+  "objects": {
+    "categoryAxis": [
+      {
+        "properties": {
+          "maxMarginFactor": {
+            "expr": {
+              "Literal": {
+                "Value": "15L"
+              }
+            }
+          },
+          "preferredCategoryWidth": {
+            "expr": {
+              "Literal": {
+                "Value": "60D"
+              }
+            }
+          },
+          "show": {
+            "expr": {
+              "Literal": {
+                "Value": "false"
+              }
+            }
+          },
+          "fontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "8D"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "valueAxis": [
+      {
+        "properties": {
+          "showAxisTitle": {
+            "expr": {
+              "Literal": {
+                "Value": "false"
+              }
+            }
+          },
+          "show": {
+            "expr": {
+              "Literal": {
+                "Value": "false"
+              }
+            }
+          },
+          "start": {
+            "expr": {
+              "Literal": {
+                "Value": "0D"
+              }
+            }
+          },
+          "fontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "8D"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "y2Axis": [
+      {
+        "properties": {}
+      }
+    ],
+    "legend": [
+      {
+        "properties": {
+          "fontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "8D"
+              }
+            }
+          },
+          "position": {
+            "expr": {
+              "Literal": {
+                "Value": "'BottomCenter'"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "labels": [
+      {
+        "properties": {
+          "labelPosition": {
+            "expr": {
+              "Literal": {
+                "Value": "'Auto'"
+              }
+            }
+          },
+          "labelContentLayout": {
+            "expr": {
+              "Literal": {
+                "Value": "'SingleLine'"
+              }
+            }
+          },
+          "fontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "8D"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "zoom": [],
+    "dataPoint": [],
+    "lineStyles": []
+  },
+  "visualContainerObjects": {
+    "background": [],
+    "general": [],
+    "border": [],
+    "dropShadow": [],
+    "stylePreset": [],
+    "visualHeader": [],
+    "padding": [],
+    "title": [
+      {
+        "properties": {
+          "fontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "9D"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "subTitle": [
+      {
+        "properties": {
+          "fontSize": {
+            "expr": {
+              "Literal": {
+                "Value": "9D"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "spacing": [],
+    "visualTooltip": []
+  }
+}

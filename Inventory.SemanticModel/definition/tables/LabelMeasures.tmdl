@@ -1,0 +1,456 @@
+/// One text measure per UI label of the report, each a LabelText lookup against Labels in the viewer's culture.
+table LabelMeasures
+	lineageTag: c618e007-5990-44cc-90d5-68b932cc888f
+
+	/// The culture every label is read in. The report is English only, so this is en-US; to add a language, add its rows to Labels and return the viewer's culture here.
+	measure 'User Culture' = "en-US"
+		displayFolder: Culture
+		lineageTag: ccfc2826-759b-4a8e-b419-3e1e017ef0e0
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 27, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Expiry Category Filter | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 27 )
+		displayFolder: Subtitles\Visual
+		lineageTag: e2763481-1d40-4a22-8a14-8ef0dbac5bdc
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 42, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Expiry Expired | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 42 )
+		displayFolder: Subtitles\Visual
+		lineageTag: a23cbf21-c125-41fd-bd3b-631cacf8fc75
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 43, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Expiry Expires within 30 days | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 43 )
+		displayFolder: Subtitles\Visual
+		lineageTag: daac93dc-f55d-487c-b7b0-3f4a469daaa0
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 44, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Expiry Expires within 90 days | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 44 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 1803b7e9-eba6-4955-b058-21abefd9d4a7
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 45, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Expiry Expiry Horizon | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 45 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 22b09937-e53b-4c63-a482-09fb384c7eed
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 46, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Expiry Stock Durability | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 46 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 798a4bf3-bde6-4dd3-832e-6ff14670df28
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 47, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Expiry Stock Expiry | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 47 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 6daf2642-08a4-4ff2-976d-27a727415243
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 41, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Expiry Value at Risk by Brand | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 41 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 6fdcbd9b-bd3b-4099-af0b-4e031916b75e
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 53, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Order Order Preparation | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 53 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 77d79e44-311f-4193-b3d5-0f6735d46be5
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 51, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Order Sales From Today | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 51 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 7c4f61b1-b1a3-4f7a-bb08-0a3598cf0d24
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 52, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Order Sales To Date | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 52 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 7b20807b-c1a0-49c5-a55b-b6a69ed523dc
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 30, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Stock Detail by Customer | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 30 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 101ec106-1c72-4f15-bfb3-ea7a843f11cf
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 49, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Stock Index Share | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 49 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 787ced37-8193-43b7-918e-e995e6042755
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 50, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Stock Stock Value Column and line chart | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 50 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 8e7c6251-16fd-4398-922a-5fc97017f3eb
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 48, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Stock Stock Value | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 48 )
+		displayFolder: Subtitles\Visual
+		lineageTag: fecbc0c8-7d51-4d4e-affc-ddfb5b149976
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 40, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Tooltip Stock | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 40 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 0a72d2a8-0b8c-436e-b6e3-547f039c9dec
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 29, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Working Days Passed | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 29 )
+		displayFolder: Subtitles\Visual
+		lineageTag: dbe4ba10-d6f2-4dc6-adfc-15a16e7e1131
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 28, VisualSubtitle, in the viewer's culture.
+	measure 'Alt Working Days Remaining | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 28 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 9b5f643d-bb8b-4299-91a7-cfbf784052ff
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Caption under a value: Labels row Visual 25, MeasureLabel, in the viewer's culture.
+	measure 'Compared with Minimum and Maximum | MeasureLabel' = LabelText( "MeasureLabel", "Visual", 25 )
+		displayFolder: Labels\Visual
+		lineageTag: d035efb2-3a35-4c31-a974-c66a69df0403
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 14, VisualSubtitle, in the viewer's culture.
+	measure 'Cover and Turnover | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 14 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 82853bd9-3eda-43d2-ae66-1cc886b2bf4b
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Slicer title: Labels row Slicer 4, SlicerTitle, in the viewer's culture.
+	measure 'Date | SlicerTitle' = LabelText( "SlicerTitle", "Slicer", 4 )
+		displayFolder: Titles\Slicer
+		lineageTag: 12e654b1-663a-43ea-b819-f1de3005118d
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Caption under a value: Labels row Visual 23, MeasureLabel, in the viewer's culture.
+	measure 'Days Passed | MeasureLabel' = LabelText( "MeasureLabel", "Visual", 23 )
+		displayFolder: Labels\Visual
+		lineageTag: 5165ecb4-bdbf-404c-ad5c-8309c6f60da0
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Caption under a value: Labels row Visual 24, MeasureLabel, in the viewer's culture.
+	measure 'Days Remaining | MeasureLabel' = LabelText( "MeasureLabel", "Visual", 24 )
+		displayFolder: Labels\Visual
+		lineageTag: 2d59153a-1303-4f13-9a6b-f2bb8d5d0576
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Slicer title: Labels row Slicer 8, SlicerTitle, in the viewer's culture.
+	measure 'Division/Product | SlicerTitle' = LabelText( "SlicerTitle", "Slicer", 8 )
+		displayFolder: Titles\Slicer
+		lineageTag: b2b2c74f-8142-4025-bb82-565e51c40eb0
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual title: Labels row Visual 32, VisualTitle, in the viewer's culture.
+	measure 'Expired Stock | VisualTitle' = LabelText( "VisualTitle", "Visual", 32 )
+		displayFolder: Titles\Visual
+		lineageTag: 62833672-a9d1-4325-97d7-f2ec0e24b48a
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual title: Labels row Visual 33, VisualTitle, in the viewer's culture.
+	measure 'Expiry 30 | VisualTitle' = LabelText( "VisualTitle", "Visual", 33 )
+		displayFolder: Titles\Visual
+		lineageTag: fb80374c-9e5b-4796-b6dd-00adc50aa48a
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual title: Labels row Visual 34, VisualTitle, in the viewer's culture.
+	measure 'Expiry 90 | VisualTitle' = LabelText( "VisualTitle", "Visual", 34 )
+		displayFolder: Titles\Visual
+		lineageTag: b68932f3-83a5-4d20-ba3f-929b74fc00e7
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 31, VisualSubtitle, in the viewer's culture.
+	measure 'Expiry Interval | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 31 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 023052bf-7b8a-4d90-85b1-aeaefd76b639
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual title: Labels row Visual 31, VisualTitle, in the viewer's culture.
+	measure 'Expiry Interval | VisualTitle' = LabelText( "VisualTitle", "Visual", 31 )
+		displayFolder: Titles\Visual
+		lineageTag: 74554ed9-64cf-49a3-8aa2-f4f6e07c75fc
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual title: Labels row Visual 13, VisualTitle, in the viewer's culture.
+	measure 'Index Share | VisualTitle' = LabelText( "VisualTitle", "Visual", 13 )
+		displayFolder: Titles\Visual
+		lineageTag: 3e8d1c82-1c3e-4227-8cc9-59038eac9f6f
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Caption under a value: Labels row Visual 36, MeasureLabel, in the viewer's culture.
+	measure 'Index | MeasureLabel' = LabelText( "MeasureLabel", "Visual", 36 )
+		displayFolder: Labels\Visual
+		lineageTag: 1effe9aa-6817-4955-954c-3f6898c7dd6d
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Caption under a value: Labels row Visual 38, MeasureLabel, in the viewer's culture.
+	measure 'Interval Value | MeasureLabel' = LabelText( "MeasureLabel", "Visual", 38 )
+		displayFolder: Labels\Visual
+		lineageTag: 67741e16-40b8-477e-be5d-1189c564080b
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Slicer title: Labels row Slicer 5, SlicerTitle, in the viewer's culture.
+	measure 'Location | SlicerTitle' = LabelText( "SlicerTitle", "Slicer", 5 )
+		displayFolder: Titles\Slicer
+		lineageTag: 4faf9e3e-706f-4d77-bc8a-c10df3b8b586
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Slicer title: Labels row Slicer 6, SlicerTitle, in the viewer's culture.
+	measure 'Lot | SlicerTitle' = LabelText( "SlicerTitle", "Slicer", 6 )
+		displayFolder: Titles\Slicer
+		lineageTag: 8bbf3240-81a7-4f3f-b6d7-bfdde30f12eb
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual title: Labels row Visual 12, VisualTitle, in the viewer's culture.
+	measure 'Order Preparation | VisualTitle' = LabelText( "VisualTitle", "Visual", 12 )
+		displayFolder: Titles\Visual
+		lineageTag: 2b00b1a2-2dd3-4705-b7f5-5600e1192b8d
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Slicer title: Labels row Slicer 7, SlicerTitle, in the viewer's culture.
+	measure 'Organisation/Warehouse | SlicerTitle' = LabelText( "SlicerTitle", "Slicer", 7 )
+		displayFolder: Titles\Slicer
+		lineageTag: 60e2d40b-76b1-41ef-80f8-5d40fd215d6b
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Page subtitle: Labels row Page 1, Subtitle, in the viewer's culture.
+	measure 'Page 1 | Subtitle' = LabelText( "Subtitle", "Page", 1 )
+		displayFolder: Subtitles\Page
+		lineageTag: b862a53c-71eb-49d4-ba2f-874b1622da5f
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Page title: Labels row Page 1, Title, in the viewer's culture.
+	measure 'Page 1 | Title' = LabelText( "Title", "Page", 1 )
+		displayFolder: Titles\Page
+		lineageTag: d203518c-c0fd-448e-a276-b28226508456
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Page subtitle: Labels row Page 2, Subtitle, in the viewer's culture.
+	measure 'Page 2 | Subtitle' = LabelText( "Subtitle", "Page", 2 )
+		displayFolder: Subtitles\Page
+		lineageTag: bc166c77-5b49-4ec8-81f4-1187fef8a41d
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Page title: Labels row Page 2, Title, in the viewer's culture.
+	measure 'Page 2 | Title' = LabelText( "Title", "Page", 2 )
+		displayFolder: Titles\Page
+		lineageTag: 06aace0b-857b-4f8b-a436-bff364ff8f7a
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Page subtitle: Labels row Page 3, Subtitle, in the viewer's culture.
+	measure 'Page 3 | Subtitle' = LabelText( "Subtitle", "Page", 3 )
+		displayFolder: Subtitles\Page
+		lineageTag: 2f92efc6-b735-46e9-9530-cf41af4aca90
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Page title: Labels row Page 3, Title, in the viewer's culture.
+	measure 'Page 3 | Title' = LabelText( "Title", "Page", 3 )
+		displayFolder: Titles\Page
+		lineageTag: ad024405-b257-450d-b034-d1d2e4f8db1e
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Page tab label: Labels row Page 1, Navigator Title, in the viewer's culture.
+	measure 'PageNav1 | Title' = LabelText( "Navigator Title", "Page", 1 )
+		displayFolder: Titles\Navigation
+		lineageTag: ee54e828-7f8b-4f99-a730-2b2a3092fe47
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Page tab label: Labels row Page 2, Navigator Title, in the viewer's culture.
+	measure 'PageNav2 | Title' = LabelText( "Navigator Title", "Page", 2 )
+		displayFolder: Titles\Navigation
+		lineageTag: ff06e7d9-0c1c-46ce-bc5d-11ad3111f3d3
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Page tab label: Labels row Page 3, Navigator Title, in the viewer's culture.
+	measure 'PageNav3 | Title' = LabelText( "Navigator Title", "Page", 3 )
+		displayFolder: Titles\Navigation
+		lineageTag: 3f72ed35-0494-4b55-bd13-e32744fe0912
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Caption under a value: Labels row Visual 37, MeasureLabel, in the viewer's culture.
+	measure 'Prior Year To Date | MeasureLabel' = LabelText( "MeasureLabel", "Visual", 37 )
+		displayFolder: Labels\Visual
+		lineageTag: 800b88c6-7529-48bf-a11e-34a582d629d4
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 10, VisualSubtitle, in the viewer's culture.
+	measure 'Product Shelf Life | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 10 )
+		displayFolder: Subtitles\Visual
+		lineageTag: f85d0f8e-f25e-40ad-8d21-257d8ca7e763
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Slicer title: Labels row Slicer 9, SlicerTitle, in the viewer's culture.
+	measure 'Readiness | SlicerTitle' = LabelText( "SlicerTitle", "Slicer", 9 )
+		displayFolder: Titles\Slicer
+		lineageTag: 80e9167f-ae68-45f8-aacd-158a042f9935
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 16, VisualSubtitle, in the viewer's culture.
+	measure 'Sales Achievement Chart | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 16 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 164773a8-5d02-4e8a-bd7c-ce2c88adb55b
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 11, VisualSubtitle, in the viewer's culture.
+	measure 'Sales Forecast | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 11 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 447d67e9-e7f4-44bf-b190-4ff5e9d3625d
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual title: Labels row Visual 18, VisualTitle, in the viewer's culture.
+	measure 'Sales From Today | VisualTitle' = LabelText( "VisualTitle", "Visual", 18 )
+		displayFolder: Titles\Visual
+		lineageTag: a4c8e94b-99b5-4d39-9539-64a1e668568c
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 19, VisualSubtitle, in the viewer's culture.
+	measure 'Sales Stock | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 19 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 30f05a88-4690-42e7-a4c2-4d79c26682e9
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual title: Labels row Visual 17, VisualTitle, in the viewer's culture.
+	measure 'Sales To Date | VisualTitle' = LabelText( "VisualTitle", "Visual", 17 )
+		displayFolder: Titles\Visual
+		lineageTag: 0b922abc-4d4a-41dc-bfef-45d825760631
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Caption under a value: Labels row Visual 20, MeasureLabel, in the viewer's culture.
+	measure 'Sales Value | MeasureLabel' = LabelText( "MeasureLabel", "Visual", 20 )
+		displayFolder: Labels\Visual
+		lineageTag: a73dd6e0-31f2-4368-b17d-7d4d8e779cb2
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Caption under a value: Labels row Visual 26, MeasureLabel, in the viewer's culture.
+	measure 'Selling Value | MeasureLabel' = LabelText( "MeasureLabel", "Visual", 26 )
+		displayFolder: Labels\Visual
+		lineageTag: 19bac9e9-6012-4f51-a3d6-b168de97db38
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual title: Labels row Visual 15, VisualTitle, in the viewer's culture.
+	measure 'Stock Cover | VisualTitle' = LabelText( "VisualTitle", "Visual", 15 )
+		displayFolder: Titles\Visual
+		lineageTag: 7c6f550c-2d1f-4f2a-9a91-58290fbfc57e
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual title: Labels row Visual 22, VisualTitle, in the viewer's culture.
+	measure 'Stock Value Chart | VisualTitle' = LabelText( "VisualTitle", "Visual", 22 )
+		displayFolder: Titles\Visual
+		lineageTag: 457fc2a4-d310-4218-b5ac-6b09e15e9e76
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Caption under a value: Labels row Visual 21, MeasureLabel, in the viewer's culture.
+	measure 'Stock Value | MeasureLabel' = LabelText( "MeasureLabel", "Visual", 21 )
+		displayFolder: Labels\Visual
+		lineageTag: 5a546420-d13a-4f0a-8d33-4aed693a5c9b
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual subtitle: Labels row Visual 35, VisualSubtitle, in the viewer's culture.
+	measure 'Supplier Risk | VisualSubtitle' = LabelText( "VisualSubtitle", "Visual", 35 )
+		displayFolder: Subtitles\Visual
+		lineageTag: 4e7c482d-afb0-415c-9c2d-e34559921043
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Visual title: Labels row Visual 35, VisualTitle, in the viewer's culture.
+	measure 'Supplier Risk | VisualTitle' = LabelText( "VisualTitle", "Visual", 35 )
+		displayFolder: Titles\Visual
+		lineageTag: 810c9fb2-dd72-485f-bef2-c4aaf7354491
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	/// Caption under a value: Labels row Visual 39, MeasureLabel, in the viewer's culture.
+	measure 'Weeks of Cover | MeasureLabel' = LabelText( "MeasureLabel", "Visual", 39 )
+		displayFolder: Labels\Visual
+		lineageTag: 354e62ce-25ed-4168-bd38-f7b0de0af18e
+
+		annotation PBI_FormatHint = {"isText":true}
+
+	partition LabelMeasures = m
+		mode: import
+		queryGroup: Model
+		source =
+				let
+				    // Query group: Model
+				    // Generic measure-table scaffold - an empty table that hosts measures
+				    // only. Zero columns by design: with no visible columns and at least
+				    // one measure, Power BI shows the calculator icon and pins the table
+				    // to the top of the Fields pane.
+				    Source = #table({}, {})
+				in
+				    Source
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+
